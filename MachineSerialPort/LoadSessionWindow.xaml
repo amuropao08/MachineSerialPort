@@ -1,0 +1,84 @@
+﻿<Window x:Class="MachineSerialPort.LoadSessionWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MachineSerialPort"
+        xmlns:converters="clr-namespace:MachineSerialPort.Converters"
+        mc:Ignorable="d"
+        Title="Select Saved Session" Height="550" Width="550" WindowStartupLocation="CenterOwner">
+
+    <Window.Resources>
+        <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter" />
+    </Window.Resources>
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Resume Unfinished Job" Style="{StaticResource MaterialDesignHeadline5TextBlock}" Margin="0,0,0,16"/>
+
+        <TextBlock Text="No saved jobs found in \SavedSessions" 
+           Grid.Row="1"
+           VerticalAlignment="Center" 
+           HorizontalAlignment="Center"
+           Visibility="{Binding ElementName=SessionListBox, Path=HasItems, Converter={StaticResource InverseBoolToVisibilityConverter}}"
+           Opacity="0.5"/>
+        
+        <ListBox x:Name="SessionListBox" Grid.Row="1" ItemsSource="{Binding Sessions}" d:ItemsSource="{d:SampleData ItemCount=5}">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Grid Margin="8" Width="470">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="{Binding CustomSessionName}" FontWeight="Bold" Foreground="#2196F3"/>
+
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Clock" Margin="0,0,4,0" VerticalAlignment="Center" Opacity="0.6"/>
+                                <TextBlock Text="{Binding LastUpdated, StringFormat='dd/MM/yyyy HH:mm'}" Margin="0,0,12,0" Opacity="0.6"/>
+                            </StackPanel>
+                            
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="PackageVariant" Margin="0,0,4,0" VerticalAlignment="Center" Opacity="0.6"/>
+                                <TextBlock Text="{Binding OrderNo}" Margin="0,0,12,0" Opacity="0.6"/>
+                                
+                                <materialDesign:PackIcon Kind="Star" Margin="0,0,4,0" VerticalAlignment="Center" Opacity="0.6"/>
+                                <TextBlock Text="{Binding Grade}" Margin="0,0,12,0" Opacity="0.6"/>
+                                
+                                <materialDesign:PackIcon Kind="Counter" Margin="0,0,4,0" VerticalAlignment="Center" Opacity="0.6"/>
+                                <TextBlock Text="{Binding MeasureData.Count, StringFormat='{}{0} Pcs'}" Margin="0,0,12,0" Opacity="0.6"/>
+
+                                <materialDesign:PackIcon Kind="Sigma" Margin="0,0,4,0" VerticalAlignment="Center" Opacity="0.6"/>
+                                <TextBlock Text="{Binding TotalAreaSum, StringFormat='{}{0:N2} sqft'}" Foreground="Green" FontWeight="Medium"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <Button Grid.Column="1" 
+                    Style="{StaticResource MaterialDesignIconButton}"
+                    Foreground="Crimson"
+                    Click="DeleteSession_Click"
+                    Tag="{Binding}">
+                            <materialDesign:PackIcon Kind="TrashCan" />
+                        </Button>
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="CANCEL" Style="{StaticResource MaterialDesignFlatButton}" IsCancel="True" Margin="0,0,8,0"/>
+            <Button Content="LOAD JOB" 
+        Click="LoadButton_Click" 
+        IsDefault="True"
+        IsEnabled="{Binding ElementName=SessionListBox, Path=HasItems}"></Button>
+        </StackPanel>
+    </Grid>
+</Window>

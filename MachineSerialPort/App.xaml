@@ -1,0 +1,114 @@
+﻿<Application x:Class="MachineSerialPort.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:MachineSerialPort"
+             xmlns:converters="clr-namespace:MachineSerialPort.Converters"
+             xmlns:System="clr-namespace:System;assembly=mscorlib">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <materialDesign:BundledTheme BaseTheme="Light" PrimaryColor="LightGreen" SecondaryColor="Green" />
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign3.Defaults.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <converters:PauseTextConverter x:Key="PauseTextConverter" />
+            <converters:PauseIconConverter x:Key="PauseIconConverter" />
+            <converters:PauseColorConverter x:Key="PauseColorConverter" />
+            <converters:TimeSpanToDurationConverter x:Key="TimeSpanConverter" />
+
+            <!--Confirm Dialog-->
+            <DataTemplate x:Key="ConfirmTemplate">
+                <StackPanel Margin="40">
+                    <materialDesign:PackIcon Kind="{Binding Icon}"
+                                 Foreground="{Binding IconColor}"
+                                 Width="35" Height="35"
+                                 HorizontalAlignment="Center"/>
+
+                    <TextBlock Text="{Binding Message}"
+                   FontWeight="Bold"
+                   FontSize="18"
+                   HorizontalAlignment="Center"
+                   Margin="10,20"
+                               MaxWidth="600"
+                               TextWrapping="Wrap"/>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                        <Button Content="{Binding NoMessage}" 
+                    Foreground="ForestGreen"
+                    IsCancel="True"
+                                HorizontalAlignment="Center"
+                                Width="150"
+                    Style="{StaticResource MaterialDesignFlatButton}" 
+                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}">
+                            <Button.CommandParameter>
+                                <System:Boolean>False</System:Boolean>
+                            </Button.CommandParameter>
+                        </Button>
+
+                        <Button Content="{Binding YesMessage}" 
+                    IsDefault="True"
+                    Foreground="Crimson"
+                                HorizontalAlignment="Center"
+                                Width="150"
+                    Style="{StaticResource MaterialDesignFlatButton}" 
+                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
+                    Margin="8,0,0,0">
+                            <Button.CommandParameter>
+                                <System:Boolean>True</System:Boolean>
+                            </Button.CommandParameter>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </DataTemplate>
+            
+            <!--OK Dialog-->
+            <DataTemplate x:Key="InfoTemplate">
+                <StackPanel Margin="40">
+                    <materialDesign:PackIcon Kind="{Binding Icon}"
+                                 Foreground="{Binding IconColor}"
+                                 Height="35"
+                                 HorizontalAlignment="Center"
+                                 Width="35"/>
+
+                    <TextBlock FontSize="16"
+                               HorizontalAlignment="Center"
+                               Margin="10,20"
+                               MaxWidth="600"
+                               Text="{Binding Message}"
+                               TextWrapping="Wrap"/>
+                    
+                    <Button Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
+                            Content="OK"
+                            HorizontalAlignment="Center"
+                            Width="100"/>
+                </StackPanel>
+            </DataTemplate>
+
+            <DataTemplate x:Key="SaveJobNameTemplate">
+                <StackPanel Margin="24" Width="300">
+                    <TextBlock Text="Save Manual Job" Style="{StaticResource MaterialDesignHeadline6TextBlock}" Margin="0,0,0,16" />
+
+                    <TextBox x:Name="JobNameInput"
+                 Text="{Binding Message, UpdateSourceTrigger=PropertyChanged}" 
+                 materialDesign:HintAssist.Hint="Enter Job Name"
+                 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                 Margin="0,0,0,24" />
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Content="CANCEL" Style="{StaticResource MaterialDesignFlatButton}"
+                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}">
+                            <Button.CommandParameter>
+                                <x:Null/>
+                            </Button.CommandParameter>
+                        </Button>
+
+                        <Button Content="SAVE" Style="{StaticResource MaterialDesignFlatButton}"
+                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
+                    CommandParameter="{Binding ElementName=JobNameInput, Path=Text}"></Button>
+                    </StackPanel>
+                </StackPanel>
+            </DataTemplate>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
