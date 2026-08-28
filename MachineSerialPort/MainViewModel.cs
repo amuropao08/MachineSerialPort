@@ -398,15 +398,15 @@ namespace MachineSerialPort
             set => SetProperty(ref _receivedData, value);
         }
 
-        private LeatherArea _selectedLeather = new();
-        public LeatherArea SelectedLeather
+        private LeatherArea? _selectedLeather = new();
+        public LeatherArea? SelectedLeather
         {
             get => _selectedLeather;
             set => SetProperty(ref _selectedLeather, value);
         }
 
-        private LeatherArea _selectedPackingLeather = new();
-        public LeatherArea SelectedPackingLeather
+        private LeatherArea? _selectedPackingLeather = new();
+        public LeatherArea? SelectedPackingLeather
         {
             get => _selectedPackingLeather;
             set => SetProperty(ref _selectedPackingLeather, value);
@@ -754,14 +754,14 @@ namespace MachineSerialPort
             }
 
             // 2. Start the safety net
-            _recoveryTimer = new DispatcherTimer();
-            _recoveryTimer.Tick += RecoveryTimer_Tick;
             _recoveryTimer.Interval = TimeSpan.FromSeconds(1);
+            _recoveryTimer.Tick -= RecoveryTimer_Tick;
+            _recoveryTimer.Tick += RecoveryTimer_Tick;
             _recoveryTimer.Start();
         }
 
-        private string _selectedPortName;
-        public string SelectedPortName
+        private string? _selectedPortName;
+        public string? SelectedPortName
         {
             get { return _selectedPortName; }
             set
@@ -963,8 +963,10 @@ namespace MachineSerialPort
                 if (args.PropertyName == nameof(LeatherArea.IsSelected))
                 {
                     // If any item is unchecked, the 'Select All' isn't true anymore
-                    if (!((LeatherArea)s).IsSelected)
+                    if (s is LeatherArea item && !item.IsSelected)
+                    {
                         _isAllSelected = false;
+                    }
                     OnPropertyChanged(nameof(IsAllSelected));
                 }
             };
@@ -1010,10 +1012,10 @@ namespace MachineSerialPort
                 }
             }
         }
-        private DispatcherTimer _recoveryTimer;
+        private DispatcherTimer _recoveryTimer = new DispatcherTimer();
         private TimeSpan _elapsedTime = TimeSpan.Zero;
-        private string _sessionDuration;
-        public string SessionDuration
+        private string? _sessionDuration;
+        public string? SessionDuration
         {
             get => _sessionDuration;
             set { _sessionDuration = value; OnPropertyChanged(); }
@@ -1027,7 +1029,7 @@ namespace MachineSerialPort
                 _elapsedTime.Minutes,
                 _elapsedTime.Seconds);
         }
-        private async void RecoveryTimer_Tick(object sender, EventArgs e)
+        private async void RecoveryTimer_Tick(object? sender, EventArgs e)
         {
             // 1. Auto-save if data changed (for recovery)
             if (_isDataDirty)
@@ -1151,7 +1153,7 @@ namespace MachineSerialPort
         //    });
         //}
 
-        private void TestSendData(object parameter)
+        private void TestSendData(object? parameter)
         {
             if (CurrentState == DeviceState.StartMeasuring)
             {
@@ -1177,7 +1179,7 @@ namespace MachineSerialPort
                     //IsStarted = false;
                     //ResetData();
                     ConnectionButtonText = "Connect";
-                    string comName = SelectedPortName.Split('(', ')')[1];
+                    string comName = SelectedPortName?.Split('(', ')')[1] ?? string.Empty;
                     ReceivedData += "Disconnected from " + comName + "\n";
                     CurrentState = DeviceState.Disconnected;
                 }
@@ -1393,8 +1395,8 @@ namespace MachineSerialPort
 
             SelectedConfirmType = ConfirmTypes[0];
         }
-        private ComboItem _selectedConfirmType;
-        public ComboItem SelectedConfirmType
+        private ComboItem? _selectedConfirmType;
+        public ComboItem? SelectedConfirmType
         {
             get => _selectedConfirmType;
             set
@@ -1418,8 +1420,8 @@ namespace MachineSerialPort
 
             SelectedPersonnel = Personnels[0];
         }
-        private ComboItem _selectedPersonnel;
-        public ComboItem SelectedPersonnel
+        private ComboItem? _selectedPersonnel;
+        public ComboItem? SelectedPersonnel
         {
             get => _selectedPersonnel;
             set
@@ -1443,8 +1445,8 @@ namespace MachineSerialPort
 
             SelectedWageGroup = WageGroups[0];
         }
-        private ComboItem _selectedWageGroup;
-        public ComboItem SelectedWageGroup
+        private ComboItem? _selectedWageGroup;
+        public ComboItem? SelectedWageGroup
         {
             get => _selectedWageGroup;
             set
@@ -1473,8 +1475,8 @@ namespace MachineSerialPort
 
             SelectedParallelUnit = ParallelUnits[0];
         }
-        private ComboItem _selectedParallelUnit;
-        public ComboItem SelectedParallelUnit
+        private ComboItem? _selectedParallelUnit;
+        public ComboItem? SelectedParallelUnit
         {
             get => _selectedParallelUnit;
             set
@@ -1503,8 +1505,8 @@ namespace MachineSerialPort
                 cnt++;
             }
         }
-        private ComboItem _selectedStorageLocation;
-        public ComboItem SelectedStorageLocation
+        private ComboItem? _selectedStorageLocation;
+        public ComboItem? SelectedStorageLocation
         {
             get => _selectedStorageLocation;
             set
@@ -1526,8 +1528,8 @@ namespace MachineSerialPort
 
             SelectedGrade = LeatherGrades[0];
         }
-        private string _selectedGrade;
-        public string SelectedGrade
+        private string? _selectedGrade;
+        public string? SelectedGrade
         {
             get => _selectedGrade;
             set
@@ -1562,8 +1564,8 @@ namespace MachineSerialPort
 
             SelectedNGReason = NGReasons[0];
         }
-        private ComboItem _selectedNGReason;
-        public ComboItem SelectedNGReason
+        private ComboItem? _selectedNGReason;
+        public ComboItem? SelectedNGReason
         {
             get => _selectedNGReason;
             set
@@ -1656,7 +1658,7 @@ namespace MachineSerialPort
         public DateTime startDateTime;
         private async Task StartMeasure()
         {
-            if (SelectedGrade == "NG" && SelectedNGReason.Value == "")
+            if (SelectedGrade == "NG" && string.IsNullOrEmpty(SelectedNGReason?.Value))
             {
                 await ConfigHelper.ShowSmartDialog(
                         "InfoTemplate",
@@ -1701,7 +1703,7 @@ namespace MachineSerialPort
                     TxtPackingTotalArea = "";
                     CurrentGroup = 1;
 
-                    if (_serialPort.IsOpen)
+                    if (_serialPort?.IsOpen == true)
                     {
                         // Clear the hardware buffers so old "garbage" data is thrown away
                         _serialPort.DiscardInBuffer();
@@ -1857,15 +1859,15 @@ namespace MachineSerialPort
             {
                 CustomSessionName = name,
                 MsId = CurrentMsId,
-                OrderNo = OrderNo,
-                MsDate = StartDate,
-                MsTime = StartTime,
-                PersonnelNo = SelectedPersonnel?.Value,
-                WageGroup = SelectedWageGroup?.Value,
-                PUom = SelectedParallelUnit?.Value,
-                StoreLoc = SelectedStorageLocation?.Value,
-                Grade = SelectedGrade,
-                NgReason = SelectedNGReason?.Value,
+                OrderNo = OrderNo ?? string.Empty,
+                MsDate = StartDate ?? string.Empty,
+                MsTime = StartTime ?? string.Empty,
+                PersonnelNo = SelectedPersonnel?.Value ?? string.Empty,
+                WageGroup = SelectedWageGroup?.Value ?? string.Empty,
+                PUom = SelectedParallelUnit?.Value ?? string.Empty,
+                StoreLoc = SelectedStorageLocation?.Value ?? string.Empty,
+                Grade = SelectedGrade ?? string.Empty,
+                NgReason = SelectedNGReason?.Value ?? string.Empty,
                 PackingSelected = IsPacking,
                 MeasureData = Leather.ToList(), // ToList() creates a thread-safe copy
                 TotalAreaSum = Leather.Sum(x => x.Area),
@@ -1912,7 +1914,9 @@ namespace MachineSerialPort
                     {
                         success = false;
                         App.Current.Dispatcher.Invoke(() => {
-                            StatusMessage = "Warning: Auto-save failed.";
+                            StatusMessage = $"Warning: Auto-save failed.\n\n" + 
+                                $"Message: {ex.Message}\n\n" + 
+                                $"Inner Exception: {ex.InnerException?.Message ?? "None"}";
                         });
                     }
                 }
@@ -2041,7 +2045,7 @@ namespace MachineSerialPort
         {
             string defaultName = $"Job_{DateTime.Now:yyyyMMdd_HHmm}";
 
-            string jobName = await ConfigHelper.ShowInputDialog("SaveJobNameTemplate", defaultName);
+            string? jobName = await ConfigHelper.ShowInputDialog("SaveJobNameTemplate", defaultName);
 
             if (string.IsNullOrWhiteSpace(jobName)) return;
 
@@ -2147,15 +2151,15 @@ namespace MachineSerialPort
             }
 
             //  TimeTicket
-            Tt[0].FIN_CONF = SelectedConfirmType.Value;
-            Tt[0].PERS_NO = SelectedPersonnel.Value != "-" ? SelectedPersonnel.Value : "";
-            Tt[0].WAGEGROUP = SelectedWageGroup.Value != "-" ? SelectedWageGroup.Value : "";
+            Tt[0].FIN_CONF = SelectedConfirmType?.Value ?? string.Empty;
+            Tt[0].PERS_NO = SelectedPersonnel?.Value != "-" ? SelectedPersonnel?.Value ?? string.Empty : "";
+            Tt[0].WAGEGROUP = SelectedWageGroup?.Value != "-" ? SelectedWageGroup?.Value ?? string.Empty : "";
             Tt[0].YIELD = TotalArea;
-            Tt[0].EXEC_START_DATE = StartDate;
-            Tt[0].EXEC_START_TIME = StartTime;
-            Tt[0].EXEC_FIN_DATE = EndDate;
-            Tt[0].EXEC_FIN_TIME = EndTime;
-            Tt[0].POSTG_DATE = EndDate;
+            Tt[0].EXEC_START_DATE = StartDate ?? string.Empty;
+            Tt[0].EXEC_START_TIME = StartTime ?? string.Empty;
+            Tt[0].EXEC_FIN_DATE = EndDate ?? string.Empty;
+            Tt[0].EXEC_FIN_TIME = EndTime ?? string.Empty;
+            Tt[0].POSTG_DATE = EndDate ?? string.Empty;
 
             Tt[0].EX_CREATED_TIME = "00:00:00";
             Tt[0].FCST_FIN_TIME = "00:00:00";
@@ -2198,15 +2202,15 @@ namespace MachineSerialPort
                         MVT_IND = "F",
                         ORDERID = Tt[0].ORDERID,
                         PLANT = Tt[0].PLANT,
-                        STGE_LOC = SelectedStorageLocation.Value,
+                        STGE_LOC = SelectedStorageLocation?.Value ?? string.Empty,
                         STCK_TYPE = StockType
                     });
 
                     Gic.Add(new _CWM_BAPI2017_GM_ITEM_CREATE
                     {
-                        BASE_UOM_PME = SelectedParallelUnit.Value,
+                        BASE_UOM_PME = SelectedParallelUnit?.Value ?? string.Empty,
                         ENTRY_QNT_PME = item.Piece,
-                        ENTRY_UOM_PME = SelectedParallelUnit.Value,
+                        ENTRY_UOM_PME = SelectedParallelUnit?.Value ?? string.Empty,
                         MATDOC_ITM = lineId,
                         QUANTITY_PME = item.Piece
                     });
@@ -2232,15 +2236,15 @@ namespace MachineSerialPort
                         MVT_IND = "F",
                         ORDERID = Tt[0].ORDERID,
                         PLANT = Tt[0].PLANT,
-                        STGE_LOC = SelectedStorageLocation.Value,
+                        STGE_LOC = SelectedStorageLocation?.Value ?? string.Empty,
                         STCK_TYPE = StockType
                     });
 
                     Gic.Add(new _CWM_BAPI2017_GM_ITEM_CREATE
                     {
-                        BASE_UOM_PME = SelectedParallelUnit.Value,
+                        BASE_UOM_PME = SelectedParallelUnit?.Value ?? string.Empty,
                         ENTRY_QNT_PME = 1,
-                        ENTRY_UOM_PME = SelectedParallelUnit.Value,
+                        ENTRY_UOM_PME = SelectedParallelUnit?.Value ?? string.Empty,
                         MATDOC_ITM = lineId,
                         QUANTITY_PME = 1
                     });
@@ -2286,8 +2290,8 @@ namespace MachineSerialPort
                 {
                     I_GM_CODE = Gc,
                     I_GM_HD = Gh,
-                    I_QA_GRADE = SelectedGrade,
-                    I_NG_REASON = SelectedNGReason.Value,
+                    I_QA_GRADE = SelectedGrade ?? string.Empty,
+                    I_NG_REASON = SelectedNGReason?.Value ?? string.Empty,
                     I_TEST = "",
                     T_DR = new BAPI_CORU_RETURN[] { },
                     T_EXT = Ex.ToArray(),
@@ -2440,21 +2444,21 @@ namespace MachineSerialPort
             DateTime endDateTime = DateTime.Parse($"{EndDate} {EndTime}");
             var matDoc = new MsMatDoc
             {
-                MatDocNo = sapMatDoc,
+                MatDocNo = sapMatDoc ?? string.Empty,
                 DocDate = startDateTime.Date,
-                PersonnelNo = SelectedPersonnel?.Value,
-                WageGroup = SelectedWageGroup?.Value,
-                PUom = SelectedParallelUnit?.Value,
-                StoreLoc = SelectedStorageLocation?.Value,
-                Grade = SelectedGrade,
-                NgReason = SelectedNGReason?.Value,
+                PersonnelNo = SelectedPersonnel?.Value ?? string.Empty,
+                WageGroup = SelectedWageGroup?.Value ?? string.Empty,
+                PUom = SelectedParallelUnit?.Value ?? string.Empty,
+                StoreLoc = SelectedStorageLocation?.Value ?? string.Empty,
+                Grade = SelectedGrade ?? string.Empty,
+                NgReason = SelectedNGReason?.Value ?? string.Empty,
                 StartDate = startDateTime.Date,
                 StartTime = startDateTime.TimeOfDay,
                 EndDate = endDateTime.Date,
                 EndTime = endDateTime.TimeOfDay,
                 IsPacking = IsPacking,
-                ConfirmNo = CnfNo,
-                ConfirmCt = CnfCnt
+                ConfirmNo = CnfNo ?? string.Empty,
+                ConfirmCt = CnfCnt ?? string.Empty
             };
 
             var dataList = Leather.Select(x => new MsData
@@ -2470,15 +2474,15 @@ namespace MachineSerialPort
                 // FIRST ROUND: Create new Summary
                 var summary = new MsSummary
                 {
-                    OrderNo = OrderNo,
+                    OrderNo = OrderNo ?? string.Empty,
                     DocDate = startDateTime.Date,
                     MsTime = startDateTime.TimeOfDay,
-                    MatNo = MatNo,
-                    MatDesc = MatDesc,
+                    MatNo = MatNo ?? string.Empty,
+                    MatDesc = MatDesc ?? string.Empty,
                     CreatedBy = Environment.UserName,
                     ComputerName = Environment.MachineName,
-                    IPAddress = ConfigHelper.GetLocalIPAddress(),
-                    SAPClient = CurrentClient
+                    IPAddress = ConfigHelper.GetLocalIPAddress() ?? string.Empty,
+                    SAPClient = CurrentClient ?? string.Empty
                 };
 
                 await _dataService.SaveToSql(summary, matDoc, dataList);
@@ -2509,21 +2513,21 @@ namespace MachineSerialPort
                 sb.AppendLine($"SAP Material Document: {sapMatDoc}");
                 sb.AppendLine($"Order No: {this.OrderNo}");
                 sb.AppendLine($"Error Message: {ex.Message}");
-                sb.AppendLine($"Inner Exception: {ex.InnerException.Message}");
+                sb.AppendLine($"Inner Exception: {ex.InnerException?.Message ?? "None"}");
                 sb.AppendLine("-------------------------------");
                 sb.AppendLine("DATA SNAPSHOT (JSON):");
 
                 // Serialize the current state so we can re-import it later if needed
                 var recoveryData = new RecoverySession {
-                    OrderNo = OrderNo,
-                    MsDate = StartDate,
-                    MsTime = StartTime,
-                    PersonnelNo = SelectedPersonnel.Value,
-                    WageGroup = SelectedWageGroup.Value,
-                    PUom = SelectedParallelUnit.Value,
-                    StoreLoc = SelectedStorageLocation.Value,
-                    Grade = SelectedGrade,
-                    NgReason = SelectedNGReason.Value,
+                    OrderNo = OrderNo ?? string.Empty,
+                    MsDate = StartDate ?? string.Empty,
+                    MsTime = StartTime ?? string.Empty,
+                    PersonnelNo = SelectedPersonnel?.Value ?? string.Empty,
+                    WageGroup = SelectedWageGroup?.Value ?? string.Empty,
+                    PUom = SelectedParallelUnit?.Value ?? string.Empty,
+                    StoreLoc = SelectedStorageLocation?.Value ?? string.Empty,
+                    Grade = SelectedGrade ?? string.Empty,
+                    NgReason = SelectedNGReason?.Value ?? string.Empty,
                     MeasureData = Leather.ToList(),
                     PackingData = PackingLeather.ToList(),
                     LastUpdated = DateTime.Now
@@ -2593,7 +2597,7 @@ namespace MachineSerialPort
                         await ConfigHelper.ShowSmartDialog(
                             "InfoTemplate",
                             $"SAP Saved ({MatDocNo}), but Local SQL failed: {sqlEx.Message}\n\n" +
-                                $"Inner Exception: {sqlEx.InnerException.Message}\n\n" +
+                                $"Inner Exception: {sqlEx.InnerException?.Message ?? "None"}\n\n" +
                                 "Please capture a screenshot of your screen before closing!",
                             PackIconKind.WarningCircle,
                             Brushes.DarkOrange
@@ -2608,7 +2612,7 @@ namespace MachineSerialPort
             }
         }
 
-        public Action RequestFocus { get; set; }
+        public Action? RequestFocus { get; set; }
         private bool CheckEnableAdd()
         {
             // Added !IsPaused and !IsBusy for safety
@@ -3164,12 +3168,12 @@ namespace MachineSerialPort
                 {
                     MeasureData = Leather,
                     DocDate = CurrentDate,
-                    Grade = SelectedGrade,
-                    NGReason = SelectedNGReason.Value,
-                    MatDesc = string.Join("/", descParts),
-                    MatNo = MatNo,
-                    OrderNo = OrderNo,
-                    TotalQty = TxtTotalArea
+                    Grade = SelectedGrade ?? string.Empty,
+                    NGReason = SelectedNGReason?.Value ?? string.Empty,
+                    MatDesc = string.Join("/", descParts) ?? string.Empty,
+                    MatNo = MatNo ?? string.Empty,
+                    OrderNo = OrderNo ?? string.Empty,
+                    TotalQty = TxtTotalArea ?? string.Empty
                 };
 
                 paras.Add(para);
@@ -3219,12 +3223,12 @@ namespace MachineSerialPort
             {
                 MeasureData = PackingLeather,
                 DocDate = CurrentDate,
-                Grade = SelectedGrade,
-                NGReason = SelectedNGReason.Value,
-                MatDesc = MatDesc,
-                MatNo = MatNo,
-                OrderNo = OrderNo,
-                TotalQty = TxtPackingTotalArea,
+                Grade = SelectedGrade ?? string.Empty,
+                NGReason = SelectedNGReason?.Value ?? string.Empty,
+                MatDesc = MatDesc ?? string.Empty,
+                MatNo = MatNo ?? string.Empty,
+                OrderNo = OrderNo ?? string.Empty,
+                TotalQty = TxtPackingTotalArea ?? string.Empty,
                 PackingGroup = CurrentGroup
             };
             docGenerator.SetData(para);
@@ -3500,9 +3504,9 @@ namespace MachineSerialPort
         //}
 
         // INotifyPropertyChanged implementation
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
-        protected virtual void OnPropertyChanged(string propertyName = null)
+        protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }

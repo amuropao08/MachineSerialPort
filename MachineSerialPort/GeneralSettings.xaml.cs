@@ -8,6 +8,7 @@ using System.ComponentModel;
 using System.IO;
 using System.IO.Ports;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -27,7 +28,7 @@ namespace MachineSerialPort
     /// </summary>
     public partial class GeneralSettings : Window, INotifyPropertyChanged
     {
-        public string OriClient;
+        public string OriClient = string.Empty;
         public bool OriIsPacking;
 
         private bool _isPackingEnable;
@@ -58,7 +59,7 @@ namespace MachineSerialPort
             }
         }
 
-        private string _oTPRequestEmail;
+        private string _oTPRequestEmail = string.Empty;
         public string OTPRequestEmail
         {
             get { return _oTPRequestEmail; }
@@ -72,7 +73,7 @@ namespace MachineSerialPort
             }
         }
 
-        private string _selectedClient;
+        private string _selectedClient = string.Empty;
 
         public string SelectedClient
         {
@@ -87,33 +88,32 @@ namespace MachineSerialPort
             }
         }
 
-        public ObservableCollection<string> SelectedClients { get; set; }
+        public ObservableCollection<string> SelectedClients { get; set; } = new ObservableCollection<string>();
 
         public ICommand SaveCommand { get; private set; }
 
         public GeneralSettings()
         {
             InitializeComponent();
-
-            this.DataContext = this;
+            DataContext = this;
 
             IsPackingEnable = ConfigHelper.GetValue<bool>("AppSettings:PackingEnable", true);
             IsShowTestSendDataButton = ConfigHelper.GetValue<bool>("AppSettings:ShowTestSendDataButton", false);
-            OTPRequestEmail = ConfigHelper.GetValue<string>("AppSettings:RequestOTPEmail");
-            SelectedClients = new ObservableCollection<string>();
-            AvailableClientts();
+            OTPRequestEmail = ConfigHelper.GetValue<string>("AppSettings:RequestOTPEmail") ?? string.Empty;
+
+            AvailableClients();
 
             SaveCommand = new RelayCommand(SaveData);
         }
 
-        private void AvailableClientts()
+        private void AvailableClients()
         {
             SelectedClients.Clear();
-
             SelectedClients.Add("QAS");
             SelectedClients.Add("PRD");
 
-            SelectedClient = ConfigHelper.GetValue<string>("AppSettings:SAPClient") == "QAS" ? SelectedClients[0] : SelectedClients[1];
+            string currentClient = ConfigHelper.GetValue<string>("AppSettings:SAPClient") ?? "QAS";
+            SelectedClient = currentClient == "QAS" ? SelectedClients[0] : SelectedClients[1];
         }
 
         private async Task SaveData()
@@ -157,29 +157,25 @@ namespace MachineSerialPort
             }
         }
 
-        public void UpdateSetting(string section, string key, object value) // Changed 'string value' to 'object value'
+        public void UpdateSetting(string section, string key, object value)
         {
-            // 1. Read the existing file
-            string json = File.ReadAllText("appsettings.json");
+            string configFilePath = "appsettings.json";
+            if (!File.Exists(configFilePath)) return;
 
-            // Deserialize to a nested Dictionary structure
+            string json = File.ReadAllText(configFilePath);
             var jsonObj = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, object>>>(json);
 
-            // 2. Update the specific key with the new value (bool, string, etc.)
-            if (jsonObj.ContainsKey(section))
+            if (jsonObj != null && jsonObj.ContainsKey(section))
             {
                 jsonObj[section][key] = value;
+                var options = new JsonSerializerOptions { WriteIndented = true };
+                string output = JsonSerializer.Serialize(jsonObj, options);
+                File.WriteAllText(configFilePath, output);
             }
-
-            // 3. Write it back to the disk with formatting
-            var options = new JsonSerializerOptions { WriteIndented = true };
-            string output = JsonSerializer.Serialize(jsonObj, options);
-            File.WriteAllText("appsettings.json", output);
         }
 
-        // INotifyPropertyChanged implementation
-        public event PropertyChangedEventHandler PropertyChanged;
-        protected virtual void OnPropertyChanged(string propertyName = null)
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }

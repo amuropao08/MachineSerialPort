@@ -287,7 +287,12 @@ namespace MachineSerialPort
             }
             else
             {
-                string[] mat_desc = { mstr_article.AtclDesc1, mstr_thickness.ThknsDesc3, mstr_customer.CustDesc1, material_creation_history.color_name };
+                string[] mat_desc = {
+                    mstr_article?.AtclDesc1 ?? string.Empty,
+                    mstr_thickness?.ThknsDesc3 ?? string.Empty,
+                    mstr_customer?.CustDesc1 ?? string.Empty,
+                    material_creation_history?.color_name ?? string.Empty
+                };
                 returnResult.SetValue(true, string.Join(' ', mat_desc));
             }
             
@@ -299,9 +304,17 @@ namespace MachineSerialPort
             try
             {
                 var rfc_pwd = _sapContext.Rfc_pass
-                                     .OrderByDescending(p => p.Createdate)
-                                     .FirstOrDefault();
-                returnResult.SetValue(true, rfc_pwd.Pwd);
+                    .OrderByDescending(p => p.Createdate)
+                    .FirstOrDefault();
+
+                if (rfc_pwd != null && !string.IsNullOrEmpty(rfc_pwd.Pwd))
+                {
+                    returnResult.SetValue(true, rfc_pwd.Pwd);
+                }
+                else
+                {
+                    returnResult.SetValue(false, "RFC password record was not found or is empty.");
+                }
             }
             catch (Exception ex)
             {
@@ -311,7 +324,7 @@ namespace MachineSerialPort
             return returnResult;
         }
 
-        public async Task SaveToSql(MsSummary summary, MsMatDoc matDoc, List<MsData> measurements, int existingId = 0)
+        public async Task SaveToSql(MsSummary? summary, MsMatDoc matDoc, List<MsData> measurements, int existingId = 0)
         {
             matDoc.Details = measurements;
 
@@ -337,8 +350,8 @@ namespace MachineSerialPort
             await _measurementLeatherContext.SaveChangesAsync();
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
-        protected virtual void OnPropertyChanged(string propertyName = null)
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }

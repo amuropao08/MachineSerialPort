@@ -27,14 +27,14 @@ namespace MachineSerialPort.PDF
 {
     class DocumentsA4
     {
-        private MSEG[] TotalGradeQty;
+        private MSEG[] TotalGradeQty = Array.Empty<MSEG>();
 
-        private string DocDate;
-        private string MatDesc;
-        private string MatNo;
-        private string OrderNo;
-        private string PQty;
-        private string Qty;
+        private string DocDate = string.Empty;
+        private string MatDesc = string.Empty;
+        private string MatNo = string.Empty;
+        private string OrderNo = string.Empty;
+        private string PQty = string.Empty;
+        private string Qty = string.Empty;
 
         public Document CreateDocument()
         {

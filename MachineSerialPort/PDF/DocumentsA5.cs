@@ -253,7 +253,6 @@ namespace MachineSerialPort.PDF
                 double gapRa = 2.5;
                 double lnGap = 6;
                 double vlPos = 6;
-                double rowH = 2.5;
                 double vlH = (lnGap * rowsPerColumn) - (lnGap / 2);
                 double gapCol = 0.4;
                 

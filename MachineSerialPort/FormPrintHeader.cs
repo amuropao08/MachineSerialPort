@@ -8,9 +8,9 @@ namespace MachineSerialPort
 {
     public class FormPrintHeader
     {
-        public string OrderNo { get; set; }
-        public string MatDesc { get; set; }
-        public string MatNo { get; set; }
+        public string OrderNo { get; set; } = string.Empty;
+        public string MatDesc { get; set; } = string.Empty;
+        public string MatNo { get; set; } = string.Empty;
         public DateTime PrintDate { get; set; }
     }
 }

@@ -26,6 +26,6 @@ namespace MachineSerialPort.Databases.Tables
         public string ConfirmNo {  get; set; } = string.Empty;
         public string ConfirmCt { get; set; } = string.Empty;
         public List<MsData> Details { get; set; } = new();
-        public virtual MsSummary Summary { get; set; }
+        public virtual MsSummary? Summary { get; set; }
     }
 }

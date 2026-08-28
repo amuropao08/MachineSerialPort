@@ -16,6 +16,6 @@ namespace MachineSerialPort.Databases.Tables
         public decimal Area { get; set; }
         public int PackingGroup { get; set; }
         public int PackingRank { get; set; }
-        public virtual MsMatDoc MatDoc { get; set; }
+        public virtual MsMatDoc? MatDoc { get; set; }
     }
 }

@@ -70,9 +70,9 @@ namespace MachineSerialPort.Helpers
         }
 
         // This uses Generics to return the type you ask for
-        public static T GetValue<T>(string key, T defaultValue = default)
+        public static T GetValue<T>(string key, T defaultValue = default!)
         {
-            return Config.GetValue<T>(key, defaultValue);
+            return Config.GetValue<T>(key, defaultValue)!;
         }
 
         public static void Reload()
@@ -85,7 +85,7 @@ namespace MachineSerialPort.Helpers
             Config = builder.Build();
         }
 
-        public static async Task<string> ShowInputDialog(string templateName, string defaultMessage)
+        public static async Task<string?> ShowInputDialog(string templateName, string defaultMessage)
         {
             var template = Application.Current.TryFindResource(templateName) as DataTemplate;
 

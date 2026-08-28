@@ -8,9 +8,9 @@ namespace MachineSerialPort.Databases.Tables
 {
     public class MstrThickness
     {
-        public string ThknsDesc3 { get; set; }
-        public string ThknsAcrn2 { get; set; }
-        public string ThknsVisible { get; set; }
-        public string ThknsActive { get; set; }
+        public string ThknsDesc3 { get; set; } = string.Empty;
+        public string ThknsAcrn2 { get; set; } = string.Empty;
+        public string ThknsVisible { get; set; } = string.Empty;
+        public string ThknsActive { get; set; } = string.Empty;
     }
 }

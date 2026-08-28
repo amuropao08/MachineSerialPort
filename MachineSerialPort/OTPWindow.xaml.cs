@@ -22,7 +22,7 @@ namespace MachineSerialPort
     {
         private string _correctOtp;
         private string _email;
-        private DispatcherTimer _timer;
+        private DispatcherTimer _timer = new DispatcherTimer();
         private TimeSpan _timeRemaining;
 
         public OTPWindow(string initialOtp, string email)
@@ -45,7 +45,7 @@ namespace MachineSerialPort
             btnResend.Visibility = Visibility.Collapsed;
         }
 
-        private void Timer_Tick(object sender, EventArgs e)
+        private void Timer_Tick(object? sender, EventArgs e)
         {
             _timeRemaining = _timeRemaining.Subtract(TimeSpan.FromSeconds(1));
             lblTimer.Text = $"Time remaining: {_timeRemaining:mm\\:ss}";

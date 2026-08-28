@@ -99,7 +99,7 @@ namespace MachineSerialPort
 
         private void DecimalTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
-            var textBox = sender as TextBox;
+            if (sender is not TextBox textBox) return;
 
             // Get the text as it WILL look after the change
             // This correctly handles if the user has highlighted text to replace it
@@ -164,10 +164,12 @@ namespace MachineSerialPort
 
         private async void LoadSession_Click(object sender, RoutedEventArgs e)
         {
-            var win = new LoadSessionWindow();
-            win.Owner = this;
+            var win = new LoadSessionWindow
+            {
+                Owner = this
+            };
 
-            if (win.ShowDialog() == true)
+            if (win.ShowDialog() == true && win.SelectedSession != null)
             {
                 // Tell the ViewModel to update the UI with the loaded data
                 _viewModel.LoadManualJob(win.SelectedSession);
@@ -274,7 +276,7 @@ namespace MachineSerialPort
         }
 
         private bool _isClosingConfirmed = false;
-        private bool _isManualSaved = false;
+
         private async void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             // If we already confirmed, just let the window close

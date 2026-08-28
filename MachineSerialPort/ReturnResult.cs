@@ -12,7 +12,7 @@ namespace MachineSerialPort
 
         public class ReturnValue {
             public bool IsSuccess { get; set; }
-            public string Message { get; set; }
+            public string Message { get; set; } = string.Empty;
         }
 
         public ReturnValue GetValue()

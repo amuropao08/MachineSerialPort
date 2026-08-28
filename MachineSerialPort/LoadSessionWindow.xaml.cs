@@ -26,7 +26,7 @@ namespace MachineSerialPort
     /// </summary>
     public partial class LoadSessionWindow : Window
     {
-        public RecoverySession SelectedSession { get; private set; }
+        public RecoverySession? SelectedSession { get; private set; }
         public ObservableCollection<RecoverySession> Sessions { get; set; } = new ObservableCollection<RecoverySession>();
 
         public LoadSessionWindow()
@@ -71,6 +71,8 @@ namespace MachineSerialPort
                 }
                 catch (IOException ioEx)
                 {
+                    System.Diagnostics.Debug.WriteLine($"File deletion lock error for {sessionName}: {ioEx.Message}");
+
                     await ConfigHelper.ShowSmartDialog(
                         "InfoTemplate",
                         "File is currently locked by the system. Try again in a moment.",

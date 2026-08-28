@@ -8,9 +8,9 @@ namespace MachineSerialPort.Databases.Tables
 {
     public class MstrCustomer
     {
-        public string CustDesc1 { get; set; }
-        public string CustAcrn2 { get; set; }
-        public string CustVisible { get; set; }
-        public string CustActive { get; set; }
+        public string CustDesc1 { get; set; } = string.Empty;
+        public string CustAcrn2 { get; set; } = string.Empty;
+        public string CustVisible { get; set; } = string.Empty;
+        public string CustActive { get; set; } = string.Empty;
     }
 }

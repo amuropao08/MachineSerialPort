@@ -8,7 +8,7 @@ namespace MachineSerialPort
 {
     public class FormPrintFooter
     {
-        public string Grade { get; set; }
+        public string Grade { get; set; } = string.Empty;
         public int QtyPcs { get; set; }
         public decimal QtySqFt { get; set; }
     }

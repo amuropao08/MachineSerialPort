@@ -20,7 +20,7 @@ namespace MachineSerialPort
             }
         }
 
-        private int _rank { get; set; }
+        private int _rank;
         public int Rank
         {
             get => _rank;
@@ -31,7 +31,7 @@ namespace MachineSerialPort
             }
         }
 
-        private decimal _area { get; set; }
+        private decimal _area;
         public decimal Area
         {
             get => _area;
@@ -42,7 +42,7 @@ namespace MachineSerialPort
             }
         }
 
-        private int _group { get; set; }
+        private int _group;
         public int Group
         {
             get => _group;
@@ -57,10 +57,14 @@ namespace MachineSerialPort
         public int PackingRank
         {
             get => _packingRank;
-            set { _packingRank = value; OnPropertyChanged(nameof(PackingRank)); }
+            set
+            {
+                _packingRank = value;
+                OnPropertyChanged(nameof(PackingRank));
+            }
         }
 
-        private int _piece { get; set; }
+        private int _piece;
         public int Piece
         {
             get => _piece;
@@ -71,7 +75,7 @@ namespace MachineSerialPort
             }
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         protected void OnPropertyChanged(string propertyName)
         {

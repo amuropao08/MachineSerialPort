@@ -9,23 +9,23 @@ namespace MachineSerialPort
 {
     public class RelayCommand : ICommand
     {
-        private readonly Action _execute;
-        private readonly Func<bool> _canExecute;
-        private readonly Func<Task> _executeAsync;
+        private readonly Action? _execute;
+        private readonly Func<bool>? _canExecute;
+        private readonly Func<Task>? _executeAsync;
 
-        public RelayCommand(Action execute, Func<bool> canExecute = null)
+        public RelayCommand(Action execute, Func<bool>? canExecute = null)
         {
             _execute = execute ?? throw new ArgumentNullException(nameof(execute));
             _canExecute = canExecute;
         }
 
-        public RelayCommand(Func<Task> execute, Func<bool> canExecute = null)
+        public RelayCommand(Func<Task> execute, Func<bool>? canExecute = null)
         {
             _executeAsync = execute ?? throw new ArgumentNullException(nameof(execute));
             _canExecute = canExecute;
         }
 
-        public async void Execute(object parameter)
+        public async void Execute(object? parameter)
         {
             if (_execute != null)
             {
@@ -50,13 +50,13 @@ namespace MachineSerialPort
             }
         }
 
-        public event EventHandler CanExecuteChanged
+        public event EventHandler? CanExecuteChanged
         {
             add { CommandManager.RequerySuggested += value; }
             remove { CommandManager.RequerySuggested -= value; }
         }
 
-        public bool CanExecute(object parameter)
+        public bool CanExecute(object? parameter)
         {
             return _canExecute == null || _canExecute();
         }

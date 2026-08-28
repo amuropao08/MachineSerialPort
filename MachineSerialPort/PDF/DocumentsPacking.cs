@@ -51,10 +51,11 @@ namespace MachineSerialPort.PDF
 
             //Styles.DefineStyles(document);
             // Get the predefined "Default" style
-            Style style = document.Styles["Normal"];
-
-            // Set the font properties
-            style.Font.Size = 12;           // Set your default size here (e.g., 10pt)
+            Style? style = document.Styles[StyleNames.Normal];
+            if (style != null)
+            {
+                style.Font.Size = 12;
+            }
 
             CreateDynamicSlip(document);
 
@@ -209,8 +210,10 @@ namespace MachineSerialPort.PDF
             rf2.Height = Unit.FromMillimeter(0.2);
             rf2.HeightRule = RowHeightRule.Exactly;
 
-            foreach (Cell cell in rf2.Cells)
+            for (int i = 0; i < rf2.Cells.Count; i++)
             {
+                Cell cell = rf2.Cells[i];
+
                 // 1. Remove the "inner" padding of the cell
                 cell.VerticalAlignment = VerticalAlignment.Top;
 
@@ -432,7 +435,6 @@ namespace MachineSerialPort.PDF
                 double gapRa = 2.5;
                 double lnGap = 6;
                 double vlPos = 6;
-                double rowH = 2.5;
                 double vlH = (lnGap * rowsPerColumn) - (lnGap / 2);
                 double gapCol = 0.4;
                 
@@ -572,14 +574,14 @@ namespace MachineSerialPort.PDF
 
         public void SetData(DocParameter para)
         {
-            DocDate = para.DocDate;
-            Grade = para.Grade;
-            NGReason = para.NGReason;
-            MeasureData = para.MeasureData;
-            MatDesc = para.MatDesc;
-            MatNo = para.MatNo;
-            OrderNo = para.OrderNo;
-            TotalQty = para.TotalQty;
+            DocDate = para.DocDate ?? string.Empty;
+            Grade = para.Grade ?? string.Empty;
+            NGReason = para.NGReason ?? string.Empty;
+            MeasureData = para.MeasureData ?? new ObservableCollection<LeatherArea>();
+            MatDesc = para.MatDesc ?? string.Empty;
+            MatNo = para.MatNo ?? string.Empty;
+            OrderNo = para.OrderNo ?? string.Empty;
+            TotalQty = para.TotalQty ?? string.Empty;
             PackingGroup = para.PackingGroup;
         }
 

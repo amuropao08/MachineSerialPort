@@ -8,7 +8,7 @@ namespace MachineSerialPort.Databases.Tables
 {
     public class material_creation_history
     {
-        public string material_code {  get; set; }
-        public string color_name { get; set; }
+        public string material_code { get; set; } = string.Empty;
+        public string color_name { get; set; } = string.Empty;
     }
 }

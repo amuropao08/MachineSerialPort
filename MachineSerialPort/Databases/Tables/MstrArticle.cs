@@ -8,9 +8,9 @@ namespace MachineSerialPort.Databases.Tables
 {
     public class MstrArticle
     {
-        public string AtclCodeU { get; set; }
-        public string AtclDesc1 { get; set; }
-        public string AtclVisible { get; set; }
-        public string AtclActive { get; set; }
+        public string AtclCodeU { get; set; } = string.Empty;
+        public string AtclDesc1 { get; set; } = string.Empty;
+        public string AtclVisible { get; set; } = string.Empty;
+        public string AtclActive { get; set; } = string.Empty;
     }
 }

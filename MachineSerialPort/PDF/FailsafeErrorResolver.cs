@@ -11,7 +11,7 @@ namespace MachineSerialPort.PDF
         private const string FALLBACK_FAMILY = "THSarabunNew";
         private const string ROOT_RESOURCE_PATH = "MachineSerialPort.PDF."; // Adjust
 
-        public FontResolverInfo ResolveTypeface(string familyName, bool isBold, bool isItalic)
+        public FontResolverInfo? ResolveTypeface(string familyName, bool isBold, bool isItalic)
         {
             if (familyName.Equals("Courier New", StringComparison.OrdinalIgnoreCase) || familyName.Equals("Arial", StringComparison.OrdinalIgnoreCase))
             {
@@ -27,7 +27,7 @@ namespace MachineSerialPort.PDF
             return null;
         }
 
-        public byte[] GetFont(string faceName)
+        public byte[]? GetFont(string faceName)
         {
             if (faceName.StartsWith(FALLBACK_FAMILY))
             {
@@ -48,17 +48,16 @@ namespace MachineSerialPort.PDF
 
                 // 3. Load the bytes from the embedded resource
                 var assembly = Assembly.GetExecutingAssembly();
-                using (Stream stream = assembly.GetManifestResourceStream(resourceName))
-                {
-                    if (stream == null)
-                    {
-                        throw new InvalidOperationException($"Embedded font resource not found: {resourceName}");
-                    }
+                using Stream? stream = assembly.GetManifestResourceStream(resourceName);
 
-                    byte[] fontData = new byte[stream.Length];
-                    stream.Read(fontData, 0, (int)stream.Length);
-                    return fontData;
+                if (stream == null)
+                {
+                    throw new InvalidOperationException($"Embedded font resource not found: {resourceName}");
                 }
+
+                byte[] fontData = new byte[stream.Length];
+                stream.Read(fontData, 0, (int)stream.Length);
+                return fontData;
             }
 
             return null; // Font name not handled by this resolver
