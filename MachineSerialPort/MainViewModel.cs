@@ -2138,17 +2138,17 @@ namespace MachineSerialPort
             string lineId = "";
             string StockType = ""; // 2 = Quality inspection, 3 = Blocked stock, "" = Unrestricted use
 
-            if (SelectedGrade == "NG" || SelectedGrade == "NC")
+            if (SelectedGrade == "NG")
             {
                 StockType = "3";
             }
-            else
-            {
-                if (!IsPacking)
-                {
-                    StockType = "2";
-                }
-            }
+            //else
+            //{
+            //    if (!IsPacking)
+            //    {
+            //        StockType = "2";
+            //    }
+            //}
 
             //  TimeTicket
             Tt[0].FIN_CONF = SelectedConfirmType?.Value ?? string.Empty;

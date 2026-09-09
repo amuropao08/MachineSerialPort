@@ -1,39 +1,33 @@
-﻿using MachineSerialPort.Databases;
+﻿using Azure;
+using MachineSerialPort.Databases;
 using MachineSerialPort.Databases.Tables;
 using MachineSerialPort.Helpers;
 using MachineSerialPort.PDF;
-using MailKit.Search;
 using MaterialDesignThemes.Wpf;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using MigraDoc.DocumentObjectModel;
-using SapChkMsOp;
 using SapGtMtClAt;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.ServiceModel;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Media;
+using System.Windows.Media.Media3D;
 
 namespace MachineSerialPort
 {
-    public class DataService(HuefulDBDbContext huefulDBContext, MaterialInfoDbContext materialInfoContext, MeasurementLeatherContext measurementLeatherContext, SapDbContext sapContext)
+    public class DataService(
+        HuefulDBDbContext huefulDBContext, 
+        MaterialInfoDbContext materialInfoContext, 
+        MeasurementLeatherContext measurementLeatherContext, 
+        SapDbContext sapContext)
     {
         private readonly HuefulDBDbContext _huefulDBContext = huefulDBContext;
         private readonly MaterialInfoDbContext _materialInfoContext = materialInfoContext;
         private readonly MeasurementLeatherContext _measurementLeatherContext = measurementLeatherContext;
         private readonly SapDbContext _sapContext = sapContext;
-        public ReturnResult returnResult = new();
-        public Dictionary<string, string> arraySapEndpoint = new Dictionary<string, string>();
-        public string SapUser = "IHL_RFC";
-        private string ErrMsg = string.Empty;
+
+        public Dictionary<string, string> ArraySapEndpoint { get; } = new();
+        public string SapUser { get; set; } = "IHL_RFC";
 
         private Z_GET_MAT_COL_ARTResponse _response = new Z_GET_MAT_COL_ARTResponse();
         public Z_GET_MAT_COL_ARTResponse Response
@@ -45,128 +39,135 @@ namespace MachineSerialPort
         private void AddEndpoint(string host, string client, string serviceName)
         {
             string url = $"http://{host}.interhides.com:8000/sap/bc/srt/rfc/sap/{serviceName}/{client}/{serviceName}/{serviceName}";
-            arraySapEndpoint[serviceName] = url;
+            ArraySapEndpoint[serviceName] = url;
         }
 
-        public void ClearCache()
-        {
-            Response = new Z_GET_MAT_COL_ARTResponse();
-            arraySapEndpoint.Clear();
-        }
-
-        public Dictionary<string, string> GetSapEndPoint(string sapClient)
-        {
-            SetSapEndpoint(sapClient);
-            return arraySapEndpoint;
-        }
-
-        // Then your method becomes very clean:
         public void SetSapEndpoint(string sapClient)
         {
-            string host = (sapClient == "PRD") ? "IHL-PRD02" : "IHL-QAS01";
-            string client = (sapClient == "PRD") ? "900" : "500";
+            ArraySapEndpoint.Clear();
+            string host = sapClient == "PRD" ? "IHL-PRD02" : "IHL-QAS01";
+            string client = sapClient == "PRD" ? "900" : "500";
 
             AddEndpoint(host, client, "z_bapi_migo");
             AddEndpoint(host, client, "z_check_measure_op");
+            AddEndpoint(host, client, "z_get_hu_info");
             AddEndpoint(host, client, "z_get_mat_col_art");
             AddEndpoint(host, client, "z_get_order_grade_total");
             AddEndpoint(host, client, "z_ws_cal_activities");
         }
 
-        public async Task<string> GetCustomerColorArticle(string MaterialNo)
+        public Dictionary<string, string> GetSapEndPoint(string sapClient)
         {
-            string ColArt = string.Empty;
-            string CustomerColor = string.Empty;
+            SetSapEndpoint(sapClient);
+            return ArraySapEndpoint;
+        }
+
+        public async Task<string> GetCustomerColorArticle(string materialNo)
+        {
+            string colArt = string.Empty;
+            string customerColor = string.Empty;
+            string errMsg = string.Empty;
+
+            var binding = new BasicHttpBinding(BasicHttpSecurityMode.TransportCredentialOnly)
+            {
+                MaxReceivedMessageSize = int.MaxValue,
+                MaxBufferSize = int.MaxValue
+            };
+            binding.ReaderQuotas.MaxStringContentLength = int.MaxValue;
+            binding.ReaderQuotas.MaxArrayLength = int.MaxValue;
+            binding.Security.Transport.ClientCredentialType = HttpClientCredentialType.Basic;
+
+            if (!ArraySapEndpoint.TryGetValue("z_get_mat_col_art", out var endpointUrl))
+            {
+                throw new InvalidOperationException("SAP endpoint 'z_get_mat_col_art' is not configured.");
+            }
+
+            var endpoint = new EndpointAddress(endpointUrl);
+            var client = new Z_GET_MAT_COL_ARTClient(binding, endpoint);
 
             try
             {
-                // Define your SAP user credentials
-                var binding = new BasicHttpBinding(BasicHttpSecurityMode.TransportCredentialOnly);
-                binding.MaxReceivedMessageSize = 2147483647; // Set to 2GB (Max Int32)
-                binding.MaxBufferSize = 2147483647;
+                client.ClientCredentials.UserName.UserName = SapUser;
 
-                // Also update the ReaderQuotas if you have large strings or arrays
-                binding.ReaderQuotas.MaxStringContentLength = 2147483647;
-                binding.ReaderQuotas.MaxArrayLength = 2147483647;
+                var pwdResult = GetRfcPwd();
 
-                binding.Security.Transport.ClientCredentialType = HttpClientCredentialType.Basic;
-                var endpoint = new EndpointAddress(arraySapEndpoint["z_get_mat_col_art"]);
+                if (!pwdResult.GetValue().IsSuccess)
+                {
+                    throw new InvalidOperationException("Could not retrieve RFC password: " + pwdResult.GetValue().Message);
+                }
+                
+                client.ClientCredentials.UserName.Password = pwdResult.GetValue().Message;
 
                 var pdoParams = new Z_GET_MAT_COL_ARTRequest
                 {
-                    I_MAT_NO = MaterialNo
+                    I_MAT_NO = materialNo
                 };
 
-                var client = new Z_GET_MAT_COL_ARTClient(binding, endpoint);
+                var response = await client.Z_GET_MAT_COL_ARTAsync(pdoParams);
 
-                client.ClientCredentials.UserName.UserName = SapUser;
-                returnResult = GetRfcPwd();
-
-                if (returnResult.GetValue().IsSuccess)
+                if (!string.IsNullOrEmpty(response.E_CUS_MAT_NO))
                 {
-                    client.ClientCredentials.UserName.Password = returnResult.GetValue().Message;
-                }
-                else
-                {
-                    throw new System.NullReferenceException("Could not get RFC password");
-                }
-
-                Response = await client.Z_GET_MAT_COL_ARTAsync(pdoParams);
-
-                if (!string.IsNullOrEmpty(Response.E_CUS_MAT_NO))
-                {
-                    string[] CustColCode = Response.E_CUS_MAT_NO.Split('/');
-                    if (CustColCode.Length > 2)
+                    string[] custColCode = response.E_CUS_MAT_NO.Split('/');
+                    if (custColCode.Length > 2)
                     {
-                        ColArt = CustColCode[1];
-                        CustomerColor = CustColCode[2];
+                        colArt = custColCode[1];
+                        customerColor = custColCode[2];
                     }
                 }
 
-                if (Response.E_CUS_COL_CODE != "")
+                if (!string.IsNullOrEmpty(response.E_CUS_COL_CODE))
                 {
-                    CustomerColor = Response.E_CUS_COL_CODE;
+                    customerColor = response.E_CUS_COL_CODE;
                 }
 
-                // Create a list of the parts, filter out the empty ones, and join them with "/"
-                ColArt = string.Join("/", new[] { ColArt, CustomerColor }.Where(s => !string.IsNullOrEmpty(s)));
+                await client.CloseAsync();
+                return string.Join("/", new[] { colArt, customerColor }.Where(s => !string.IsNullOrEmpty(s)));
             }
             catch (System.ServiceModel.FaultException faultEx)
             {
+                client.Abort();
+
                 if (faultEx.Message == "NOT_FOUND")
                 {
-                    ErrMsg = "Customer Color Article Not Found";
+                    errMsg = "Customer Color Article Not Found";
                 }
                 else
                 {
-                    ErrMsg = faultEx.Message;
+                    errMsg = faultEx.Message;
                 }
 
                 await ConfigHelper.ShowSmartDialog(
                     "InfoTemplate",
-                    ErrMsg,
+                    errMsg,
                     PackIconKind.WarningCircle,
                     Brushes.DarkOrange
                 );
             }
-            
-            return ColArt;
+            catch
+            {
+                client.Abort();
+                throw;
+            }
+
+            return colArt;
         }
 
-        public async Task<List<DocParameter>> GetLeatherMeasureByMatDoc(string OrderNo, string DocYear, string MatDocNoStart, string MatDocNoEnd)
+        public async Task<List<DocParameter>> GetLeatherMeasureByMatDoc(string orderNo, string docYear, string matDocNoStart, string matDocNoEnd)
         {
-            if (!int.TryParse(DocYear.Trim(), out int year)) return new List<DocParameter>();
+            if (!int.TryParse(docYear.Trim(), out int year)) return new List<DocParameter>();
 
-            // 1. Select into an anonymous object to bypass EF's internal relationship manager
+            string startDoc = matDocNoStart.Trim();
+            string endDoc = matDocNoEnd.Trim();
+            string trimmedOrder = orderNo.Trim();
+
             var rawData = await (from md in _measurementLeatherContext.MsMatDocs.AsNoTracking()
                                  join s in _measurementLeatherContext.MsSummaries.AsNoTracking() on md.MsId equals s.MsId
-                                 where s.OrderNo == OrderNo.Trim() &&
+                                 where s.OrderNo == trimmedOrder &&
                                        s.DocDate.Year == year &&
-                                       md.MatDocNo.CompareTo(MatDocNoStart.Trim()) >= 0 &&
-                                       md.MatDocNo.CompareTo(MatDocNoEnd.Trim()) <= 0
+                                       string.Compare(md.MatDocNo, startDoc) >= 0 &&
+                                       string.Compare(md.MatDocNo, endDoc) <= 0
                                  select new
                                  {
-                                     // Flattening the data into a simple structure
                                      S_OrderNo = s.OrderNo,
                                      S_DocDate = s.DocDate,
                                      S_MatNo = s.MatNo,
@@ -177,37 +178,39 @@ namespace MachineSerialPort
                                      MD_NgReason = md.NgReason
                                  }).ToListAsync();
 
-            System.Diagnostics.Debug.WriteLine($"FLATTENED DATA COUNT: {rawData.Count}");
-
             if (!rawData.Any()) return new List<DocParameter>();
 
-            // 2. Fetch the Details (MsData) using the IDs we just found
             var mdIds = rawData.Select(x => x.MD_MsMdId).ToList();
             var allDetails = await _measurementLeatherContext.MsDatas
                 .AsNoTracking()
                 .Where(d => mdIds.Contains(d.MsMdId))
                 .ToListAsync();
 
+            // Pre-fetch SAP color articles once per material number to prevent N+1 SOAP calls
+            var distinctMatNos = rawData.Select(x => x.S_MatNo).Distinct().ToList();
+            var colorMap = new Dictionary<string, string>();
+            foreach (var matNo in distinctMatNos)
+            {
+                try
+                {
+                    colorMap[matNo] = await GetCustomerColorArticle(matNo);
+                }
+                catch
+                {
+                    colorMap[matNo] = string.Empty;
+                }
+            }
+
+            var sortedRawData = rawData.OrderBy(x => x.MD_Grade).ThenBy(x => x.MD_MatDocNo);
             var result = new List<DocParameter>();
 
-            var sortedRawData = rawData
-                .OrderBy(x => x.MD_Grade)
-                .ThenBy(x => x.MD_MatDocNo)
-                .ToList();
-
-            // 3. Manual Mapping
             foreach (var item in sortedRawData)
             {
-                // 1. Get the details first
                 var docDetails = allDetails
                     .Where(d => d.MsMdId == item.MD_MsMdId)
-                    .OrderBy(d => d.Rank) // Good practice for PDF reports
+                    .OrderBy(d => d.Rank)
                     .ToList();
 
-                // Debug check: See if details exist for this specific ID
-                System.Diagnostics.Debug.WriteLine($"Doc {item.MD_MatDocNo} (ID:{item.MD_MsMdId}) has {docDetails.Count} detail rows.");
-
-                // 2. Map to a temporary list first to ensure no threading/UI lag
                 var leatherAreas = docDetails.Select(d => new LeatherArea
                 {
                     Rank = d.Rank,
@@ -215,11 +218,10 @@ namespace MachineSerialPort
                     Group = d.PackingGroup
                 }).ToList();
 
-                string ColorArticle = await GetCustomerColorArticle(item.S_MatNo);
+                colorMap.TryGetValue(item.S_MatNo, out var colorArticle);
 
-                // 3. Create the parameter with a fully populated collection
-                var descParts = new[] { item.S_MatDesc, ColorArticle }
-                    .Where(s => !string.IsNullOrWhiteSpace(s));
+                var descParts = new[] { item.S_MatDesc, colorArticle }.Where(s => !string.IsNullOrWhiteSpace(s));
+
                 result.Add(new DocParameter
                 {
                     OrderNo = item.S_OrderNo,
@@ -229,99 +231,68 @@ namespace MachineSerialPort
                     Grade = item.MD_Grade,
                     NGReason = item.MD_NgReason,
                     TotalQty = docDetails.Sum(d => d.Area).ToString("N2"),
-
-                    // Use the list to initialize the collection
                     MeasureData = new ObservableCollection<LeatherArea>(leatherAreas)
                 });
             }
 
-            var totalRows = result.Sum(r => r.MeasureData.Count);
-            System.Diagnostics.Debug.WriteLine($"TOTAL ROWS READY FOR PDF: {totalRows}");
             return result;
         }
 
-        public ReturnResult GetMaterialDescription(string MaterialNo)
+        public ReturnResult GetMaterialDescription(string materialNo)
         {
-            string[] mat_no = MaterialNo.Split('-');
-            List<string> chk_error = new List<string>();
-            string cri_thickness = mat_no[2].Substring(0, 1);
-            string cri_customer = mat_no[2].Substring(1, 3);
+            var result = new ReturnResult();
 
-            var mstr_article = _huefulDBContext.MstrArticle
-                                               .Where(ma => ma.AtclCodeU == mat_no[1] && ma.AtclVisible == "T" && ma.AtclActive == "Y")
-                                               .FirstOrDefault();
-
-            var mstr_thickness = _huefulDBContext.MstrThickness
-                                               .Where(mt => mt.ThknsAcrn2 == cri_thickness && mt.ThknsVisible == "T" && mt.ThknsActive == "Y")
-                                               .FirstOrDefault();
-
-            var mstr_customer = _huefulDBContext.MstrCustomer
-                                               .Where(mc => mc.CustAcrn2 == cri_customer && mc.CustVisible == "T" && mc.CustActive == "Y")
-                                               .FirstOrDefault();
-
-            var material_creation_history = _materialInfoContext.material_creation_history
-                                               .Where(mch => mch.material_code == MaterialNo)
-                                               .FirstOrDefault();
-
-            // Check if any of the results are null and return a meaningful message
-            if (mstr_article == null)
+            if (string.IsNullOrWhiteSpace(materialNo))
             {
-                chk_error.Add("Article not found.");
-            }
-            if (mstr_thickness == null)
-            {
-                chk_error.Add("Thickness not found.");
-            }
-            if (mstr_customer == null)
-            {
-                chk_error.Add("Customer Description not found.");
-            }
-            if (material_creation_history == null)
-            {
-                chk_error.Add("Color Name not found.");
+                result.SetValue(false, "Material number is required.");
+                return result;
             }
 
-            if (chk_error != null && chk_error.Count > 0)
+            string[] matNoParts = materialNo.Split('-');
+            if (matNoParts.Length < 3 || matNoParts[2].Length < 4)
             {
-                returnResult.SetValue(false, string.Join("\n", chk_error));
+                result.SetValue(false, "Invalid Material Number format.");
+                return result;
+            }
+
+            string criThickness = matNoParts[2].Substring(0, 1);
+            string criCustomer = matNoParts[2].Substring(1, 3);
+            string articleCode = matNoParts[1];
+
+            var mstrArticle = _huefulDBContext.MstrArticle
+                .FirstOrDefault(ma => ma.AtclCodeU == articleCode && ma.AtclVisible == "T" && ma.AtclActive == "Y");
+
+            var mstrThickness = _huefulDBContext.MstrThickness
+                .FirstOrDefault(mt => mt.ThknsAcrn2 == criThickness && mt.ThknsVisible == "T" && mt.ThknsActive == "Y");
+
+            var mstrCustomer = _huefulDBContext.MstrCustomer
+                .FirstOrDefault(mc => mc.CustAcrn2 == criCustomer && mc.CustVisible == "T" && mc.CustActive == "Y");
+
+            var materialHistory = _materialInfoContext.material_creation_history
+                .FirstOrDefault(mch => mch.material_code == materialNo);
+
+            List<string> errors = new();
+            if (mstrArticle == null) errors.Add("Article not found.");
+            if (mstrThickness == null) errors.Add("Thickness not found.");
+            if (mstrCustomer == null) errors.Add("Customer Description not found.");
+            if (materialHistory == null) errors.Add("Color Name not found.");
+
+            if (errors.Count > 0)
+            {
+                result.SetValue(false, string.Join("\n", errors));
             }
             else
             {
-                string[] mat_desc = {
-                    mstr_article?.AtclDesc1 ?? string.Empty,
-                    mstr_thickness?.ThknsDesc3 ?? string.Empty,
-                    mstr_customer?.CustDesc1 ?? string.Empty,
-                    material_creation_history?.color_name ?? string.Empty
+                string[] matDesc = {
+                    mstrArticle?.AtclDesc1 ?? string.Empty,
+                    mstrThickness?.ThknsDesc3 ?? string.Empty,
+                    mstrCustomer?.CustDesc1 ?? string.Empty,
+                    materialHistory?.color_name ?? string.Empty
                 };
-                returnResult.SetValue(true, string.Join(' ', mat_desc));
-            }
-            
-            return returnResult;
-        }
-
-        public ReturnResult GetRfcPwd()
-        {
-            try
-            {
-                var rfc_pwd = _sapContext.Rfc_pass
-                    .OrderByDescending(p => p.Createdate)
-                    .FirstOrDefault();
-
-                if (rfc_pwd != null && !string.IsNullOrEmpty(rfc_pwd.Pwd))
-                {
-                    returnResult.SetValue(true, rfc_pwd.Pwd);
-                }
-                else
-                {
-                    returnResult.SetValue(false, "RFC password record was not found or is empty.");
-                }
-            }
-            catch (Exception ex)
-            {
-                returnResult.SetValue(false, ex.Message);
+                result.SetValue(true, string.Join(' ', matDesc));
             }
 
-            return returnResult;
+            return result;
         }
 
         public async Task SaveToSql(MsSummary? summary, MsMatDoc matDoc, List<MsData> measurements, int existingId = 0)
@@ -348,6 +319,32 @@ namespace MachineSerialPort
             }
 
             await _measurementLeatherContext.SaveChangesAsync();
+        }
+
+        public ReturnResult GetRfcPwd()
+        {
+            var result = new ReturnResult();
+            try
+            {
+                var rfcPwd = _sapContext.Rfc_pass
+                    .OrderByDescending(p => p.Createdate)
+                    .FirstOrDefault();
+
+                if (rfcPwd != null && !string.IsNullOrEmpty(rfcPwd.Pwd))
+                {
+                    result.SetValue(true, rfcPwd.Pwd);
+                }
+                else
+                {
+                    result.SetValue(false, "RFC password record was not found or is empty.");
+                }
+            }
+            catch (Exception ex)
+            {
+                result.SetValue(false, ex.Message);
+            }
+
+            return result;
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
