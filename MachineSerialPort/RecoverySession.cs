@@ -23,6 +23,7 @@ namespace MachineSerialPort
         public string StoreLoc { get; set; } = string.Empty;
         public string Grade { get; set; } = string.Empty;
         public string NgReason { get; set; } = string.Empty;
+        public string Packaging { get; set; } = string.Empty;
         public bool PackingSelected { get; set; } = true;
 
         public int CurrentGroupNumber { get; set; } = 1;

@@ -16,15 +16,15 @@ using System.Windows.Media.Media3D;
 namespace MachineSerialPort
 {
     public class DataService(
-        HuefulDBDbContext huefulDBContext, 
-        MaterialInfoDbContext materialInfoContext, 
-        MeasurementLeatherContext measurementLeatherContext, 
-        SapDbContext sapContext)
+    IDbContextFactory<HuefulDBDbContext> huefulDBFactory,
+    IDbContextFactory<MaterialInfoDbContext> materialInfoFactory,
+    IDbContextFactory<MeasurementLeatherContext> measurementLeatherFactory,
+    IDbContextFactory<SapDbContext> sapFactory)
     {
-        private readonly HuefulDBDbContext _huefulDBContext = huefulDBContext;
-        private readonly MaterialInfoDbContext _materialInfoContext = materialInfoContext;
-        private readonly MeasurementLeatherContext _measurementLeatherContext = measurementLeatherContext;
-        private readonly SapDbContext _sapContext = sapContext;
+        private readonly IDbContextFactory<HuefulDBDbContext> _huefulDBFactory = huefulDBFactory;
+        private readonly IDbContextFactory<MaterialInfoDbContext> _materialInfoFactory = materialInfoFactory;
+        private readonly IDbContextFactory<MeasurementLeatherContext> _measurementLeatherFactory = measurementLeatherFactory;
+        private readonly IDbContextFactory<SapDbContext> _sapFactory = sapFactory;
 
         public Dictionary<string, string> ArraySapEndpoint { get; } = new();
         public string SapUser { get; set; } = "IHL_RFC";
@@ -156,12 +156,14 @@ namespace MachineSerialPort
         {
             if (!int.TryParse(docYear.Trim(), out int year)) return new List<DocParameter>();
 
+            using var context = _measurementLeatherFactory.CreateDbContext();
+
             string startDoc = matDocNoStart.Trim();
             string endDoc = matDocNoEnd.Trim();
             string trimmedOrder = orderNo.Trim();
 
-            var rawData = await (from md in _measurementLeatherContext.MsMatDocs.AsNoTracking()
-                                 join s in _measurementLeatherContext.MsSummaries.AsNoTracking() on md.MsId equals s.MsId
+            var rawData = await (from md in context.MsMatDocs.AsNoTracking()
+                                 join s in context.MsSummaries.AsNoTracking() on md.MsId equals s.MsId
                                  where s.OrderNo == trimmedOrder &&
                                        s.DocDate.Year == year &&
                                        string.Compare(md.MatDocNo, startDoc) >= 0 &&
@@ -181,24 +183,18 @@ namespace MachineSerialPort
             if (!rawData.Any()) return new List<DocParameter>();
 
             var mdIds = rawData.Select(x => x.MD_MsMdId).ToList();
-            var allDetails = await _measurementLeatherContext.MsDatas
+            var allDetails = await context.MsDatas
                 .AsNoTracking()
                 .Where(d => mdIds.Contains(d.MsMdId))
                 .ToListAsync();
 
-            // Pre-fetch SAP color articles once per material number to prevent N+1 SOAP calls
+            // ... ส่วนที่เหลือเหมือนเดิมทั้งหมด (ไม่แตะ context อีกแล้วหลังจากนี้)
             var distinctMatNos = rawData.Select(x => x.S_MatNo).Distinct().ToList();
             var colorMap = new Dictionary<string, string>();
             foreach (var matNo in distinctMatNos)
             {
-                try
-                {
-                    colorMap[matNo] = await GetCustomerColorArticle(matNo);
-                }
-                catch
-                {
-                    colorMap[matNo] = string.Empty;
-                }
+                try { colorMap[matNo] = await GetCustomerColorArticle(matNo); }
+                catch { colorMap[matNo] = string.Empty; }
             }
 
             var sortedRawData = rawData.OrderBy(x => x.MD_Grade).ThenBy(x => x.MD_MatDocNo);
@@ -206,20 +202,9 @@ namespace MachineSerialPort
 
             foreach (var item in sortedRawData)
             {
-                var docDetails = allDetails
-                    .Where(d => d.MsMdId == item.MD_MsMdId)
-                    .OrderBy(d => d.Rank)
-                    .ToList();
-
-                var leatherAreas = docDetails.Select(d => new LeatherArea
-                {
-                    Rank = d.Rank,
-                    Area = d.Area,
-                    Group = d.PackingGroup
-                }).ToList();
-
+                var docDetails = allDetails.Where(d => d.MsMdId == item.MD_MsMdId).OrderBy(d => d.Rank).ToList();
+                var leatherAreas = docDetails.Select(d => new LeatherArea { Rank = d.Rank, Area = d.Area, Group = d.PackingGroup }).ToList();
                 colorMap.TryGetValue(item.S_MatNo, out var colorArticle);
-
                 var descParts = new[] { item.S_MatDesc, colorArticle }.Where(s => !string.IsNullOrWhiteSpace(s));
 
                 result.Add(new DocParameter
@@ -259,16 +244,19 @@ namespace MachineSerialPort
             string criCustomer = matNoParts[2].Substring(1, 3);
             string articleCode = matNoParts[1];
 
-            var mstrArticle = _huefulDBContext.MstrArticle
+            using var huefulContext = _huefulDBFactory.CreateDbContext();
+            using var materialContext = _materialInfoFactory.CreateDbContext();
+
+            var mstrArticle = huefulContext.MstrArticle
                 .FirstOrDefault(ma => ma.AtclCodeU == articleCode && ma.AtclVisible == "T" && ma.AtclActive == "Y");
 
-            var mstrThickness = _huefulDBContext.MstrThickness
+            var mstrThickness = huefulContext.MstrThickness
                 .FirstOrDefault(mt => mt.ThknsAcrn2 == criThickness && mt.ThknsVisible == "T" && mt.ThknsActive == "Y");
 
-            var mstrCustomer = _huefulDBContext.MstrCustomer
+            var mstrCustomer = huefulContext.MstrCustomer
                 .FirstOrDefault(mc => mc.CustAcrn2 == criCustomer && mc.CustVisible == "T" && mc.CustActive == "Y");
 
-            var materialHistory = _materialInfoContext.material_creation_history
+            var materialHistory = materialContext.material_creation_history
                 .FirstOrDefault(mch => mch.material_code == materialNo);
 
             List<string> errors = new();
@@ -284,11 +272,11 @@ namespace MachineSerialPort
             else
             {
                 string[] matDesc = {
-                    mstrArticle?.AtclDesc1 ?? string.Empty,
-                    mstrThickness?.ThknsDesc3 ?? string.Empty,
-                    mstrCustomer?.CustDesc1 ?? string.Empty,
-                    materialHistory?.color_name ?? string.Empty
-                };
+                mstrArticle?.AtclDesc1 ?? string.Empty,
+                mstrThickness?.ThknsDesc3 ?? string.Empty,
+                mstrCustomer?.CustDesc1 ?? string.Empty,
+                materialHistory?.color_name ?? string.Empty
+            };
                 result.SetValue(true, string.Join(' ', matDesc));
             }
 
@@ -297,28 +285,28 @@ namespace MachineSerialPort
 
         public async Task SaveToSql(MsSummary? summary, MsMatDoc matDoc, List<MsData> measurements, int existingId = 0)
         {
+            using var context = _measurementLeatherFactory.CreateDbContext(); // ← สด ใหม่ ทุกครั้ง!
+
             matDoc.Details = measurements;
 
             if (existingId > 0)
             {
-                // 1. Find the existing summary in the Database
-                var existingSummary = await _measurementLeatherContext.MsSummaries
+                var existingSummary = await context.MsSummaries
+                    .Include(x => x.MatDocs)
                     .FirstOrDefaultAsync(x => x.MsId == existingId);
 
                 if (existingSummary != null)
                 {
-                    // 2. Add the new MatDoc to the existing Summary's collection
                     existingSummary.MatDocs.Add(matDoc);
                 }
             }
             else if (summary != null)
             {
-                // 3. Brand new session
                 summary.MatDocs.Add(matDoc);
-                _measurementLeatherContext.MsSummaries.Add(summary);
+                context.MsSummaries.Add(summary);
             }
 
-            await _measurementLeatherContext.SaveChangesAsync();
+            await context.SaveChangesAsync();
         }
 
         public ReturnResult GetRfcPwd()
@@ -326,18 +314,15 @@ namespace MachineSerialPort
             var result = new ReturnResult();
             try
             {
-                var rfcPwd = _sapContext.Rfc_pass
+                using var context = _sapFactory.CreateDbContext();
+                var rfcPwd = context.Rfc_pass
                     .OrderByDescending(p => p.Createdate)
                     .FirstOrDefault();
 
                 if (rfcPwd != null && !string.IsNullOrEmpty(rfcPwd.Pwd))
-                {
                     result.SetValue(true, rfcPwd.Pwd);
-                }
                 else
-                {
                     result.SetValue(false, "RFC password record was not found or is empty.");
-                }
             }
             catch (Exception ex)
             {

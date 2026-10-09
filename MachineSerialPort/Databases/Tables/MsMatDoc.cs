@@ -18,6 +18,7 @@ namespace MachineSerialPort.Databases.Tables
         public string StoreLoc { get; set; } = string.Empty;
         public string Grade { get; set; } = string.Empty;
         public string NgReason { get; set; } = string.Empty;
+        public string Packaging { get; set; } = string.Empty;
         public DateTime StartDate { get; set; }
         public TimeSpan StartTime { get; set; }
         public DateTime EndDate { get; set; }

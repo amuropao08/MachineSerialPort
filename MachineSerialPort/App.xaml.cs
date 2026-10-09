@@ -19,34 +19,31 @@ namespace MachineSerialPort
 
         protected override void OnStartup(StartupEventArgs e)
         {
-            // In your application startup method
             var services = new ServiceCollection();
 
-            // Register the first DbContext with its connection string
-            services.AddDbContext<HuefulDBDbContext>(options =>
+            // เปลี่ยนจาก AddDbContext เป็น AddDbContextFactory ทุกตัว
+            services.AddDbContextFactory<HuefulDBDbContext>(options =>
                 options.UseSqlServer(ConfigHelper.Config.GetConnectionString("HuefulDB")));
 
-            services.AddDbContext<MaterialInfoDbContext>(options =>
+            services.AddDbContextFactory<MaterialInfoDbContext>(options =>
                 options.UseSqlServer(ConfigHelper.Config.GetConnectionString("MaterialInfo")));
 
-            services.AddDbContext<MeasurementLeatherContext>(options =>
+            services.AddDbContextFactory<MeasurementLeatherContext>(options =>
                 options
                     .UseSqlServer(ConfigHelper.Config.GetConnectionString("MeasurementLeather"))
-                    .LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information) // Log to Output window
-                    .EnableSensitiveDataLogging() // This lets you see the Parameter values (like OrderNo));
+                    .LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information)
+                    .EnableSensitiveDataLogging()
             );
 
-            services.AddDbContext<SapDbContext>(options =>
+            services.AddDbContextFactory<SapDbContext>(options =>
                 options.UseSqlServer(ConfigHelper.Config.GetConnectionString("SAP")));
 
-            services.AddTransient<DataService>();
+            services.AddSingleton<DataService>(); // ตอนนี้ปลอดภัยที่จะเป็น Singleton เพราะไม่ถือ DbContext ค้างแล้ว
             services.AddSingleton<MainViewModel>();
             services.AddSingleton<MainWindow>();
 
-            // Build the service provider
             ServiceProvider = services.BuildServiceProvider();
 
-            // Create and show your main window
             var mainWindow = ServiceProvider.GetRequiredService<MainWindow>();
             mainWindow.Show();
 

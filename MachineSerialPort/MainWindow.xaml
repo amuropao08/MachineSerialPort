@@ -11,7 +11,7 @@
         Closing="Window_Closing"
         FocusManager.FocusedElement="{Binding ElementName=txtOrderNo}"
         Loaded="Window_Loaded"
-        Title="Leather Measurement" Height="800" Width="1250">
+        Title="Leather Measurement" Height="800" Width="1340">
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
@@ -21,6 +21,12 @@
                          From="1.0" To="0.4" Duration="0:0:0.8"
                          AutoReverse="True" />
         </Storyboard>
+
+        <Style x:Key="IconButtonPanelStyle" TargetType="StackPanel">
+            <Setter Property="Orientation" Value="Horizontal" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
 
         <Style x:Key="PauseButtonStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedButton}">
             <Style.Triggers>
@@ -58,6 +64,7 @@
                 <RowDefinition Height="35"/>
                 <RowDefinition Height="35"/>
                 <RowDefinition Height="35"/>
+                <RowDefinition Height="35"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="35"/>
                 <RowDefinition Height="10"/>
@@ -70,13 +77,13 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="90"/>
                 <ColumnDefinition Width="10"/>
-                <ColumnDefinition Width="250"/>
-                <ColumnDefinition Width="100"/>
+                <ColumnDefinition Width="410"/>
+                <ColumnDefinition Width="10"/>
                 <ColumnDefinition Width="90"/>
                 <ColumnDefinition Width="10"/>
                 <ColumnDefinition Width="275"/>
                 <ColumnDefinition Width="10"/>
-                <ColumnDefinition Width="90"/>
+                <ColumnDefinition Width="110"/>
                 <ColumnDefinition Width="10"/>
                 <ColumnDefinition Width="275"/>
                 <ColumnDefinition Width="*"/>
@@ -139,11 +146,14 @@
                 }" />
                     </TextBox.InputBindings>
                 </TextBox>
-                <Button
-        Command="{Binding GetOrderInfoCommand}"
-        Content="Search"
-        Grid.Column="2"
-        IsEnabled="{Binding IsReadyToSearchOrder}" />
+                <Button Command="{Binding GetOrderInfoCommand}"
+                        Grid.Column="2"
+                        IsEnabled="{Binding IsReadyToSearchOrder}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Magnify" Margin="0,0,6,0" VerticalAlignment="Center" />
+                        <TextBlock Text="Search" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
             </Grid>
 
             <!--Row 3 Col 5-->
@@ -164,18 +174,21 @@
         IsEnabled="{Binding IsToggleConnected}"
         ItemsSource="{Binding AvailablePorts}"
         SelectedItem="{Binding SelectedPortName}"/>
-                <Button
-        Content="Refresh Ports"
-        Command="{Binding RefreshPortsCommand}"
-        Grid.Column="2"
-        HorizontalAlignment="Right"
-        IsEnabled="{Binding IsToggleConnected}"/>
+                <Button Command="{Binding RefreshPortsCommand}"
+                        Grid.Column="2"
+                        HorizontalAlignment="Right"
+                        IsEnabled="{Binding IsToggleConnected}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Refresh" Margin="0,0,6,0" VerticalAlignment="Center" />
+                        <TextBlock Text="Refresh Ports" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
             </Grid>
 
             <!--Row 3 Col 10-->
             <Grid Grid.Row="2" Grid.Column="10">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="67"/>
+                    <ColumnDefinition Width="42"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="10"/>
                     <ColumnDefinition Width="Auto"/>
@@ -185,27 +198,35 @@
                 
                 <TextBlock Grid.Column="1" HorizontalAlignment="Right" Text="Baud Rate" VerticalAlignment="Center" />
                 <TextBox Grid.Column="3" HorizontalAlignment="Center" IsEnabled="{Binding IsToggleConnected}" Text="{Binding BaudRate}" />
-                <Button Grid.Column="5" Content="{Binding ConnectionButtonText}" Command="{Binding ToggleConnectionCommand}" HorizontalAlignment="Left" IsEnabled="{Binding IsToggleConnected}" />
+                <Button Command="{Binding ToggleConnectionCommand}"
+                        Grid.Column="5"
+                        HorizontalAlignment="Left"
+                        IsEnabled="{Binding IsToggleConnected}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="{Binding ConnectionButtonIcon}" Margin="0,0,6,0" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding ConnectionButtonText}" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
             </Grid>
 
             <!--Row 5 Col 1-->
             <TextBlock Grid.Row="4" Grid.Column="0" HorizontalAlignment="Right" Text="Material No." VerticalAlignment="Center" />
 
             <!--Row 5 Col 3-->
-            <TextBox Grid.Row="4" Grid.Column="2" IsReadOnly="True" Text="{Binding MatNo}" />
-
-            <!--Row 5 Col 4-->
-            <Grid Grid.Row="4" Grid.Column="3">
+            <Grid Grid.Row="4" Grid.Column="2">
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="50"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="10"/>
-                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <TextBlock Grid.Column="0" HorizontalAlignment="Right" Text="Unit" VerticalAlignment="Center" />
-                <TextBox Grid.Column="2" IsReadOnly="True" Text="{Binding Unit}" />
+                <TextBox Grid.Column="0" IsReadOnly="True" Text="{Binding MatNo}" />
+                <TextBlock Grid.Column="2" HorizontalAlignment="Right" Text="Unit" VerticalAlignment="Center" />
+                <TextBox Grid.Column="4" IsReadOnly="True" Text="{Binding Unit}" />
             </Grid>
-
+            
             <!--Row 5 Col 5-->
             <TextBlock FontSize="14" FontWeight="SemiBold" Grid.Row="4" Grid.Column="4" Grid.RowSpan="2" Grid.ColumnSpan="3" HorizontalAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Center">
                 <TextBlock.Style>
@@ -273,11 +294,43 @@
             <TextBox Grid.Row="5" Grid.Column="2" IsReadOnly="True" Text="{Binding MatDesc}" />
 
             <!--Row 7 Col 1-->
-            <TextBlock Grid.Row="6" Grid.Column="0" HorizontalAlignment="Right" Text="Color Article" VerticalAlignment="Center" />
+            <TextBlock Grid.Row="6" Grid.Column="0" HorizontalAlignment="Right" Text="Order Qty." VerticalAlignment="Center" />
 
             <!--Row 7 Col 3-->
-            <TextBox Grid.Row="6" Grid.Column="2" IsReadOnly="True" Text="{Binding ColorArticle}" />
+            <Grid Grid.Row="6" Grid.Column="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="10"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="10"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="10"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="10"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="10"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
+                <TextBlock Grid.Column="0" HorizontalAlignment="Left" Text="Total" VerticalAlignment="Center" />
+
+                <TextBox Grid.Column="2" IsReadOnly="True" Text="{Binding OrderQty.Total, StringFormat=N3}" />
+
+                <TextBlock Grid.Column="4" HorizontalAlignment="Left" Text="Delivered" VerticalAlignment="Center" />
+
+                <TextBox Grid.Column="6" IsReadOnly="True" Text="{Binding OrderQty.Delivered, StringFormat=N3}" />
+
+                <TextBlock Grid.Column="8" HorizontalAlignment="Left" Text="Remaining" VerticalAlignment="Center" />
+
+                <TextBox Grid.Column="10" IsReadOnly="True" Text="{Binding OrderQty.Remaining, StringFormat=N3}" />
+            </Grid>
+            
+            <!--Row 8 Col 1-->
+            <TextBlock Grid.Row="7" Grid.Column="0" HorizontalAlignment="Right" Text="Color Article" VerticalAlignment="Center" />
+
+            <!--Row 8 Col 3-->
+            <TextBox Grid.Row="7" Grid.Column="2" IsReadOnly="True" Text="{Binding ColorArticle}" />
+            
             <!--Row 7 Col 5-->
             <TextBlock Grid.Row="6" Grid.Column="4" HorizontalAlignment="Right" Text="Leather Area" VerticalAlignment="Center" />
 
@@ -286,7 +339,7 @@
     AutoGenerateColumns="False"
     CanUserAddRows="False"
     Grid.Row="6"
-    Grid.RowSpan="12"
+    Grid.RowSpan="13"
     Grid.Column="6"
     HorizontalAlignment="Left"
     ItemsSource="{Binding Leather}"
@@ -358,7 +411,7 @@
             <DataGrid
     AutoGenerateColumns="False"
     CanUserAddRows="False"
-    Grid.RowSpan="10"
+    Grid.RowSpan="11"
     Grid.Row="6"
     Grid.Column="10"
     ItemsSource="{Binding PackingLeather}"
@@ -393,11 +446,11 @@
                 </DataGrid.Columns>
             </DataGrid>
 
-            <!--Row 8 Col 1-->
-            <TextBlock Grid.Row="7" Grid.Column="0" HorizontalAlignment="Right" Text="Operation" VerticalAlignment="Center" />
+            <!--Row 9 Col 1-->
+            <TextBlock Grid.Row="8" Grid.Column="0" HorizontalAlignment="Right" Text="Operation" VerticalAlignment="Center" />
 
-            <!--Row 8 Col 3-->
-            <Grid Grid.Row="7" Grid.Column="2">
+            <!--Row 9 Col 3-->
+            <Grid Grid.Row="8" Grid.Column="2">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
@@ -410,64 +463,31 @@
                 <ComboBox Grid.Column="3" IsEnabled="{Binding IsReadyToEditSettings}" ItemsSource="{Binding ConfirmTypes}" Name="cmbConfirmType" SelectedItem="{Binding SelectedConfirmType}" Visibility="Hidden" />
             </Grid>
 
-            <!--Row 9 Col 1-->
-            <TextBlock Grid.Row="8" Grid.Column="0" HorizontalAlignment="Right" Text="Personnel No." VerticalAlignment="Center" />
+            <!--Row 10 Col 1-->
+            <TextBlock Grid.Row="9" Grid.Column="0" HorizontalAlignment="Right" Text="Personnel No." VerticalAlignment="Center" />
 
-            <!--Row 9 Col 3-->
-            <ComboBox Grid.Row="8" Grid.Column="2" IsEnabled="{Binding IsReadyToEditSettings}" ItemsSource="{Binding Personnels}" Name="cmbPersonnel" SelectedItem="{Binding SelectedPersonnel}" />
-
+            <!--Row 10 Col 3-->
+            <ComboBox Grid.Row="9" Grid.Column="2" IsEnabled="{Binding IsReadyToEditSettings}" ItemsSource="{Binding Personnels}" Name="cmbPersonnel" SelectedItem="{Binding SelectedPersonnel}" />
+            
             <!--Row 9 Col 9-->
             <Button x:Name="RequestAddDataButton"
                     Click="Request_Click"
-                    Content="Request"
-                    Grid.Row="8"
                     Grid.Column="8"
+                    Grid.Row="8"
                     HorizontalAlignment="Center"
-                    IsEnabled="{Binding CanProcessData}" />
+                    IsEnabled="{Binding CanProcessData}">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="LockOpenVariant" Margin="0,0,6,0" VerticalAlignment="Center" />
+                    <TextBlock Text="Request" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
 
-            <!--Row 10 Col 1-->
-            <TextBlock Grid.Row="9" Grid.Column="0" HorizontalAlignment="Right" Text="Wage Group" VerticalAlignment="Center" />
+            <!--Row 12 Col 1-->
+            <TextBlock Grid.Row="11" Grid.Column="0" HorizontalAlignment="Right" Text="Wage Group" VerticalAlignment="Center" />
 
-            <!--Row 10 Col 3-->
-            <ComboBox Grid.Row="9" Grid.Column="2" IsEnabled="{Binding IsReadyToEditSettings}" ItemsSource="{Binding WageGroups}" Name="cmbWageGroup" SelectedItem="{Binding SelectedWageGroup}" />
-
-            <!--Row 10 Col 4-->
-            <CheckBox
-    Content="Packing"
-    Grid.Row="9"
-    Grid.Column="3"
-    HorizontalAlignment="Center"
-    IsChecked="{Binding IsPacking}"
-    IsEnabled="{Binding IsPackingAllowed}"
-    Name="chkPacking"
-    ToolTipService.ShowOnDisabled="True"
-    VerticalAlignment="Center">
-                <CheckBox.Style>
-                    <Style TargetType="CheckBox">
-                        <Style.Triggers>
-                            <DataTrigger
-                    Binding="{
-                        Binding ElementName=cmbLeatherGrade,
-                        Path=Text
-                    }"
-                    Value="NC">
-                                <Setter Property="IsEnabled" Value="False"/>
-                                <Setter Property="ToolTip" Value="Packing is not available for NC grade leather."/>
-                            </DataTrigger>
-                            <DataTrigger
-                    Binding="{
-                        Binding ElementName=cmbLeatherGrade,
-                        Path=Text
-                    }"
-                    Value="NG">
-                                <Setter Property="IsEnabled" Value="False"/>
-                                <Setter Property="ToolTip" Value="Packing is not available for NG grade leather."/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </CheckBox.Style>
-            </CheckBox>
-
+            <!--Row 12 Col 3-->
+            <ComboBox Grid.Row="11" Grid.Column="2" IsEnabled="{Binding IsReadyToEditSettings}" ItemsSource="{Binding WageGroups}" Name="cmbWageGroup" SelectedItem="{Binding SelectedWageGroup}" />
+            
             <!--Row 10 Col 9-->
             <TextBox x:Name="AddMeasureDataText"
                      DataObject.Pasting="DecimalTextBox_Pasting"
@@ -479,35 +499,47 @@
                      PreviewTextInput="DecimalTextBox_PreviewTextInput"
                      Text="{Binding AddMeasureData, UpdateSourceTrigger=PropertyChanged}" />
 
-            <!--Row 12 Col 1-->
-            <TextBlock Grid.Row="11" Grid.Column="0" HorizontalAlignment="Right" Text="PUn UnE" VerticalAlignment="Center"/>
-
-            <!--Row 12 Col 3-->
-            <ComboBox Grid.Row="11" Grid.Column="2" IsEnabled="{Binding IsReadyToEditSettings}" ItemsSource="{Binding ParallelUnits}" Name="cmbParallelUnit" SelectedItem="{Binding SelectedParallelUnit}" />
-
             <!--Row 12 Col 9-->
             <Button x:Name="AddDataButton"
                     Command="{Binding AddItemCommand}"
-                    Content="Add"
-                    Grid.Row="11"
                     Grid.Column="8"
+                    Grid.Row="11"
                     HorizontalAlignment="Center"
-                    IsEnabled="{Binding CanAddData}" />
+                    IsEnabled="{Binding CanAddData}">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="PlusThick" Margin="0,0,6,0" VerticalAlignment="Center" />
+                    <TextBlock Text="Add" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
 
             <!--Row 13 Col 1-->
-            <TextBlock Grid.Row="12" Grid.Column="0" HorizontalAlignment="Right" Text="Stor. Loc." VerticalAlignment="Center"/>
+            <TextBlock Grid.Row="12" Grid.Column="0" HorizontalAlignment="Right" Text="PUn UnE" VerticalAlignment="Center"/>
 
             <!--Row 13 Col 3-->
-            <ComboBox Grid.Row="12" Grid.Column="2" IsEnabled="{Binding IsReadyToEditSettings}" ItemsSource="{Binding StorageLocations}" Name="cmbStoragLocation" SelectedItem="{Binding SelectedStorageLocation}" />
+            <Grid Grid.Row="12" Grid.Column="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="50"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="10"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
+                <ComboBox Grid.Column="0" IsEnabled="{Binding IsReadyToEditSettings}" ItemsSource="{Binding ParallelUnits}" Name="cmbParallelUnit" SelectedItem="{Binding SelectedParallelUnit}" />
+
+                <TextBlock Grid.Column="2" HorizontalAlignment="Right" Text="Stor. Loc." VerticalAlignment="Center"/>
+
+                <ComboBox Grid.Column="4" IsEnabled="{Binding IsReadyToEditSettings}" ItemsSource="{Binding StorageLocations}" Name="cmbStoragLocation" SelectedItem="{Binding SelectedStorageLocation}" />
+            </Grid>
+            
             <!--Row 14 Col 1-->
             <TextBlock Grid.Row="13" Grid.Column="0" HorizontalAlignment="Right" Text="Grade" VerticalAlignment="Center"/>
 
             <!--Row 14 Col 3-->
-            <Grid Grid.Row="13" Grid.Column="2" Grid.ColumnSpan="2">
+            <Grid Grid.Row="13" Grid.Column="2">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="10"/>
+                    <ColumnDefinition Width="50"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="10"/>
                     <ColumnDefinition Width="*"/>
@@ -523,34 +555,74 @@
         SelectedItem="{Binding SelectedNGReason}" />
             </Grid>
 
-            <!--Row 16 Col 9-->
-            <Button x:Name="DeleteDataButton"
-                    Command="{Binding DeleteItemCommand}"
-                    Content="Delete"
-                    Grid.Row="15"
-                    Grid.Column="8"
-                    HorizontalAlignment="Center"
-                    IsEnabled="{Binding CanProcessData}"
-                    VerticalAlignment="Bottom" />
+            <!--Row 15 Col 1-->
+            <TextBlock Grid.Row="14" Grid.Column="0" HorizontalAlignment="Right" Text="Packaging" VerticalAlignment="Center"/>
 
-            <!--Row 16 Col 3-->
-            <Grid Grid.Row="15" Grid.Column="2">
+            <!--Row 15 Col 3-->
+            <Grid Grid.Row="14" Grid.Column="2">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="50"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
+                
+                <ComboBox Grid.Column="0" IsEnabled="{Binding IsReadyToEditSettings}" ItemsSource="{Binding Packagings}" Name="cmbPackaging" SelectedItem="{Binding SelectedPackaging}" />
 
-                <Button Content="Start" Command="{Binding StartCommand}" Grid.Column="0" HorizontalAlignment="Left" IsEnabled="{Binding IsReadyToStart}" />
-                <Button Content="Cancel" Command="{Binding CancelCommand}" Grid.Column="2" HorizontalAlignment="Center" IsEnabled="{Binding IsMeasuring}" />
-                <Button Content="Stop" Command="{Binding StopCommand}" Grid.Column="4" HorizontalAlignment="Right" IsEnabled="{Binding IsMeasuring}" />
+                <CheckBox
+Content="Packing"
+Grid.Column="2"
+HorizontalAlignment="Center"
+IsChecked="{Binding IsPacking}"
+IsEnabled="{Binding IsPackingAllowed}"
+Name="chkPacking"
+ToolTipService.ShowOnDisabled="True"
+VerticalAlignment="Center">
+                    <CheckBox.Style>
+                        <Style TargetType="CheckBox">
+                            <Style.Triggers>
+                                <DataTrigger
+                Binding="{
+                    Binding ElementName=cmbLeatherGrade,
+                    Path=Text
+                }"
+                Value="NC">
+                                    <Setter Property="IsEnabled" Value="False"/>
+                                    <Setter Property="ToolTip" Value="Packing is not available for NC grade leather."/>
+                                </DataTrigger>
+                                <DataTrigger
+                Binding="{
+                    Binding ElementName=cmbLeatherGrade,
+                    Path=Text
+                }"
+                Value="NG">
+                                    <Setter Property="IsEnabled" Value="False"/>
+                                    <Setter Property="ToolTip" Value="Packing is not available for NG grade leather."/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </CheckBox.Style>
+                </CheckBox>
             </Grid>
 
-            <!--Row 18 Col 3-->
-            <Grid Grid.Row="17" Grid.Column="2">
+            <!--Row 17 Col 9-->
+            <Button x:Name="DeleteDataButton"
+                    Command="{Binding DeleteItemCommand}"
+                    Grid.Column="8"
+                    Grid.Row="16"
+                    HorizontalAlignment="Center"
+                    IsEnabled="{Binding CanProcessData}"
+                    VerticalAlignment="Bottom">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="TrashCan" Margin="0,0,6,0" VerticalAlignment="Center" />
+                    <TextBlock Text="Delete" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+
+            <!--Row 17 Col 3-->
+            <Grid Grid.Row="16" Grid.Column="2">
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
@@ -558,7 +630,42 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <Button Name="btnSave" Content="Save" Command="{Binding SaveCommand}" Grid.Column="0" HorizontalAlignment="Left" IsEnabled="{Binding IsReadyToSave}">
+                <Button Command="{Binding StartCommand}"
+                        Grid.Column="0"
+                        HorizontalAlignment="Left"
+                        IsEnabled="{Binding IsReadyToStart}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Play" Margin="0,0,6,0" VerticalAlignment="Center" />
+                        <TextBlock Text="Start" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Button Command="{Binding CancelCommand}"
+                        Grid.Column="2"
+                        HorizontalAlignment="Center"
+                        IsEnabled="{Binding IsMeasuring}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Cancel" Margin="0,0,6,0" VerticalAlignment="Center" />
+                        <TextBlock Text="Cancel" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Button Command="{Binding StopCommand}"
+                        Grid.Column="4"
+                        HorizontalAlignment="Right"
+                        IsEnabled="{Binding IsMeasuring}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Stop" Margin="0,0,6,0" VerticalAlignment="Center" />
+                        <TextBlock Text="Stop" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Button Command="{Binding SaveCommand}"
+                        Grid.Column="6"
+                        HorizontalAlignment="Left"
+                        IsEnabled="{Binding IsReadyToSave}"
+                        Name="btnSave">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="ContentSave" Margin="0,0,6,0" VerticalAlignment="Center" />
+                        <TextBlock Text="Save" VerticalAlignment="Center" />
+                    </StackPanel>
                     <Button.Style>
                         <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedButton}">
                             <Style.Triggers>
@@ -569,45 +676,90 @@
                         </Style>
                     </Button.Style>
                 </Button>
-                <Button Content="Print A5" Command="{Binding PrintA5Command}" Grid.Column="2" HorizontalAlignment="Center" />
-                <Button Content="Print A4" Command="{Binding PrintA4Command}" Grid.Column="4" HorizontalAlignment="Right" />
             </Grid>
 
-            <!--Row 18 Col 9-->
-            <TextBlock Grid.Column="8" Grid.Row="17" HorizontalAlignment="Right" Text="Total" VerticalAlignment="Center" Visibility="{Binding IsPacking, Converter={StaticResource BoolToVisibilityConverter}}"/>
+            <!--Row 19 Col 3-->
+            <Grid Grid.Row="18" Grid.Column="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-            <!--Row 18 Col 11-->
-            <TextBox x:Name="txtPackingTotalArea" Grid.Column="10" Grid.Row="17" HorizontalContentAlignment="Right" IsReadOnly="True" Text="{Binding TxtPackingTotalArea}" Visibility="{Binding IsPacking, Converter={StaticResource BoolToVisibilityConverter}}" />
 
-            <!--Row 20 Col 3-->
-            <Grid Grid.Row="19" Grid.Column="2">
+                <Button Command="{Binding PrintA5Command}"
+                        Grid.Column="0"
+                        HorizontalAlignment="Center">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Printer" Margin="0,0,6,0" VerticalAlignment="Center" />
+                        <TextBlock Text="Print A5" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Button Command="{Binding PrintA4Command}"
+                        Grid.Column="2"
+                        HorizontalAlignment="Right">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Printer" Margin="0,0,6,0" VerticalAlignment="Center" />
+                        <TextBlock Text="Print A4" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Button Command="{Binding PrintQRCommand}"
+                        Grid.Column="4"
+                        HorizontalAlignment="Right">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Printer" Margin="0,0,6,0" VerticalAlignment="Center" />
+                        <TextBlock Text="Print QR" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+
+            <!--Row 19 Col 9-->
+            <TextBlock Grid.Column="8" Grid.Row="18" HorizontalAlignment="Right" Text="Total" VerticalAlignment="Center" Visibility="{Binding IsPacking, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+            <!--Row 19 Col 11-->
+            <TextBox x:Name="txtPackingTotalArea" Grid.Column="10" Grid.Row="18" HorizontalContentAlignment="Right" IsReadOnly="True" Text="{Binding TxtPackingTotalArea}" Visibility="{Binding IsPacking, Converter={StaticResource BoolToVisibilityConverter}}" />
+            
+            <!--Row 21 Col 3-->
+            <Grid Grid.Row="20" Grid.Column="2">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <Button Content="New PDO" Command="{Binding ResetCommand}" Grid.Column="0" HorizontalAlignment="Left" />
-                <Button
-        x:Name="TestSendDataButton"
-        Command="{Binding TestSendDataCommand}"
-        Content="Test Send Data"
-        Grid.Column="2"
-        HorizontalAlignment="Right"
-        Visibility="{
-            Binding ShowTestSendDataButton,
-            Converter={StaticResource BoolToVisibilityConverter}
-        }" />
+                <Button Command="{Binding ResetCommand}"
+                        Grid.Column="0"
+                        HorizontalAlignment="Left">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Autorenew" Margin="0,0,6,0" VerticalAlignment="Center" />
+                        <TextBlock Text="New PDO" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Button x:Name="TestSendDataButton"
+                        Command="{Binding TestSendDataCommand}"
+                        Grid.Column="2"
+                        HorizontalAlignment="Right"
+                        Visibility="{
+                            Binding ShowTestSendDataButton,
+                            Converter={StaticResource BoolToVisibilityConverter}
+                            }">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="TestTube" Margin="0,0,6,0" VerticalAlignment="Center" />
+                        <TextBlock Text="Test Send Data" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
             </Grid>
 
-            <!--Row 20 Col 5-->
-            <TextBlock Grid.Row="19" Grid.Column="4" HorizontalAlignment="Right" Text="Total" VerticalAlignment="Center"/>
+            <!--Row 21 Col 5-->
+            <TextBlock Grid.Row="20" Grid.Column="4" HorizontalAlignment="Right" Text="Total" VerticalAlignment="Center"/>
 
-            <!--Row 20 Col 7-->
-            <TextBox x:Name="txtTotalArea" Grid.Row="19" Grid.Column="6" HorizontalContentAlignment="Right" IsReadOnly="True" Text="{Binding TxtTotalArea}" />
-
-            <!--Row 20 Col 11-->
-            <Grid Grid.Row="19" Grid.Column="10">
+            <!--Row 21 Col 7-->
+            <TextBox x:Name="txtTotalArea" Grid.Row="20" Grid.Column="6" HorizontalContentAlignment="Right" IsReadOnly="True" Text="{Binding TxtTotalArea}" />
+            
+            <!--Row 21 Col 11-->
+            <Grid Grid.Row="20" Grid.Column="10">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
@@ -617,15 +769,19 @@
                 <!--<Button x:Name="PrintPackingButton" Command="{Binding PrintPackingCommand}" Content="Print" Grid.Column="0" HorizontalAlignment="Left" Visibility="{Binding IsPacking, Converter={StaticResource BoolToVisibilityConverter}}" />-->
                 <Button x:Name="NextPackingButton"
                         Command="{Binding NextPackingCommand}"
-                        Content="Pack"
                         Grid.Column="2"
                         HorizontalAlignment="Right"
                         IsEnabled="{Binding CanProcessData}"
-                        Visibility="{Binding IsPacking, Converter={StaticResource BoolToVisibilityConverter}}" />
+                        Visibility="{Binding IsPacking, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="PackageVariantClosed" Margin="0,0,6,0" VerticalAlignment="Center" />
+                        <TextBlock Text="Pack" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
             </Grid>
 
-            <!--Row 22 Col 1-->
-            <StatusBar Grid.Column="0" Grid.ColumnSpan="12" Grid.Row="21">
+            <!--Row 23 Col 1-->
+            <StatusBar Grid.Column="0" Grid.ColumnSpan="12" Grid.Row="22">
                 <StatusBarItem>
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="DatabaseSync" Width="14" Height="14" VerticalAlignment="Center" Foreground="Gray"/>
@@ -664,7 +820,7 @@
             <!--Progress Bar-->
             <Border Grid.Row="0" 
     Grid.Column="0" 
-    Grid.RowSpan="22" 
+    Grid.RowSpan="23" 
     Grid.ColumnSpan="12"
     Background="#A0FFFFFF" 
     Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConverter}}">

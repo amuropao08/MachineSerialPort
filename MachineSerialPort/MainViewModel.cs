@@ -3,6 +3,7 @@ using MachineSerialPort.Connected_Services;
 using MachineSerialPort.Databases;
 using MachineSerialPort.Databases.Tables;
 using MachineSerialPort.Helpers;
+using MachineSerialPort.Models;
 using MachineSerialPort.PDF;
 using MaterialDesignThemes.Wpf;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +19,7 @@ using PdfSharp.Fonts;
 using PdfSharp.Pdf;
 using PdfSharp.Quality;
 using SapChkMsOp;
+using SapGtHuIf;
 using SapGtMtClAt;
 using SapMigo;
 using SapOdGrdTt;
@@ -125,6 +127,13 @@ namespace MachineSerialPort
         {
             get => _colorArticle;
             set => SetProperty(ref _colorArticle, value);
+        }
+
+        private string _connectionButtonIcon = "LanConnect";
+        public string ConnectionButtonIcon
+        {
+            get => _connectionButtonIcon;
+            set => SetProperty(ref _connectionButtonIcon, value);
         }
 
         private string _connectionButtonText = "Connect";
@@ -261,6 +270,17 @@ namespace MachineSerialPort
                 OnPropertyChanged(nameof(IsPacking));
                 OnPropertyChanged(nameof(TextPackingStatus));
                 OnPropertyChanged(nameof(TextPackingColor));
+            }
+        }
+
+        private OrderQuantity _orderQty = new();
+        public OrderQuantity OrderQty
+        {
+            get => _orderQty;
+            set
+            {
+                _orderQty = value;
+                OnPropertyChanged(nameof(OrderQty));
             }
         }
 
@@ -443,6 +463,13 @@ namespace MachineSerialPort
             set => SetProperty(ref _unit, value);
         }
 
+        private string _packaging = string.Empty;
+        public string Packaging
+        {
+            get => _packaging;
+            set => SetProperty(ref _packaging, value);
+        }
+
         public ICommand AddItemCommand { get; private set; }
         public ICommand DeleteItemCommand { get; }
         public ICommand GetOrderInfoCommand { get; private set; }
@@ -526,16 +553,19 @@ namespace MachineSerialPort
 
             IsPacking = ConfigHelper.GetValue<bool>("AppSettings:PackingEnable", false);
             ShowTestSendDataButton = ConfigHelper.GetValue<bool>("AppSettings:ShowTestSendDataButton", false);
+            OrderQty = new OrderQuantity();
 
             //Leather          = new ObservableCollection<LeatherArea>();
             LeatherGrades    = new ObservableCollection<string>();
             NGReasons        = new ObservableCollection<ComboItem>();
             //PackingBatch     = new ObservableCollection<LeatherArea>();
             //PackingLeather   = new ObservableCollection<LeatherArea>();
+            //Packagings       = new ObservableCollection<ComboItem>();
             ParallelUnits    = new ObservableCollection<ComboItem>();
             Personnels       = new ObservableCollection<ComboItem>();
             StorageLocations = new ObservableCollection<ComboItem>();
             WageGroups       = new ObservableCollection<ComboItem>();
+            Packagings       = new ObservableCollection<ComboItem>();
 
             RefreshPortsCommand     = new RelayCommand(RefreshPorts);
             ToggleConnectionCommand = new RelayCommand(ToggleConnection);
@@ -575,73 +605,6 @@ namespace MachineSerialPort
             _ = InitializeAsync();
 
             //IsStarted = false;
-        }
-
-        private async Task LoadRecoveryData(RecoverySession recovered)
-        {
-            OrderNo = recovered.OrderNo;
-
-            // Now we can safely await the SAP data
-            await GetOrderInfo();
-
-            // Restore the rest of the fields after SAP has populated the ComboBoxes
-            try
-            {
-                // This assumes MsDate is "yyyy-MM-dd" and MsTime is "HH:mm:ss"
-                startDateTime = DateTime.Parse($"{recovered.MsDate} {recovered.MsTime}");
-                _elapsedTime = recovered.ElapsedTime;
-            }
-            catch
-            {
-                // Fallback if recovery strings are empty or corrupted
-                startDateTime = DateTime.Now;
-                _elapsedTime = TimeSpan.Zero;
-            }
-
-            StartDate = startDateTime.ToString("yyyy-MM-dd");
-            StartTime = startDateTime.ToString("HH:mm:ss");
-            SelectedPersonnel = Personnels.FirstOrDefault(p => p.Value == recovered.PersonnelNo);
-            SelectedWageGroup = WageGroups.FirstOrDefault(p => p.Value == recovered.WageGroup);
-            SelectedParallelUnit = ParallelUnits.FirstOrDefault(p => p.Value == recovered.PUom);
-            SelectedStorageLocation = StorageLocations.FirstOrDefault(p => p.Value == recovered.StoreLoc);
-            SelectedGrade = recovered.Grade;
-            SelectedNGReason = NGReasons.FirstOrDefault(p => p.Value == recovered.NgReason);
-            IsPacking = recovered.PackingSelected;
-            CurrentMsId = recovered.MsId;
-            CurrentGroup = recovered.CurrentGroupNumber;
-
-            // Restore the Print list (md)
-            this.md.Clear();
-            if (recovered.MaterialDocRanges != null)
-            {
-                foreach (var range in recovered.MaterialDocRanges)
-                {
-                    this.md.Add(range);
-                }
-            }
-
-            Leather.Clear();
-            recovered.MeasureData.ForEach(x => Leather.Add(x));
-            SelectedLeather = Leather.LastOrDefault();
-            TotalArea = recovered.TotalAreaSum;
-            TxtTotalArea = TotalArea.ToString("#,##0.000");
-
-            if (IsPacking)
-            {
-                PackingLeather.Clear();
-                recovered.PackingData?.ForEach(x => PackingLeather.Add(x));
-                SelectedPackingLeather = PackingLeather.LastOrDefault();
-                PackingTotalArea = recovered.TotalPackingAreaSum;
-                TxtPackingTotalArea = PackingTotalArea.ToString("#,##0.000");
-
-                PackingBatch.Clear();
-                recovered.PackingBatchData?.ForEach(x => PackingBatch.Add(x));
-            }
-
-            IsStarted = true;
-            CurrentState = DeviceState.StartMeasuring;
-
-            UpdateTimerUI();
         }
 
         private async Task InitializeAsync()
@@ -855,6 +818,7 @@ namespace MachineSerialPort
                 CurrentState = DeviceState.Connected;
                 //_isStarted = true;
                 //IsStarted = true;
+                ConnectionButtonIcon = "LanDisconnect";
                 ConnectionButtonText = "Disconnect";
                 ReceivedData = "Connected to " + comName + "\n";
             }
@@ -1178,6 +1142,7 @@ namespace MachineSerialPort
                     //_isStarted = false;
                     //IsStarted = false;
                     //ResetData();
+                    ConnectionButtonIcon = "LanConnect";
                     ConnectionButtonText = "Connect";
                     string comName = SelectedPortName?.Split('(', ')')[1] ?? string.Empty;
                     ReceivedData += "Disconnected from " + comName + "\n";
@@ -1300,6 +1265,9 @@ namespace MachineSerialPort
 
                         MatNo = Oi.PLNBEZ;
                         MatDesc = Oi.MAKTX;
+                        OrderQty.Total = Oi.GAMNG;
+                        OrderQty.Delivered = Oi.ISM04;
+                        OrderQty.Remaining = Oi.ISM05;
                         OperNo = Tt[0].OPERATION;
                         Unit = Tt[0].CONF_QUAN_UNIT;
 
@@ -1319,6 +1287,31 @@ namespace MachineSerialPort
                         {
                             ColorArticle = await _dataService.GetCustomerColorArticle(MatNo);
                         }
+
+                        endpoint = new EndpointAddress(arraySapEndpoint["z_get_hu_info"]);
+
+                        var huParams = new Z_GET_HU_INFORequest
+                        {
+                            I_GET_PI = ""
+                        };
+
+                        var huClient = new Z_GET_HU_INFOClient(binding, endpoint);
+
+                        // Set the SAP credentials
+                        huClient.ClientCredentials.UserName.UserName = _dataService.SapUser;
+
+                        if (sapPass != null)
+                        {
+                            huClient.ClientCredentials.UserName.Password = sapPass;
+                        }
+                        else
+                        {
+                            throw new System.NullReferenceException("Could not get RFC password");
+                        }
+
+                        // Call the web service method
+                        var huResponse = await huClient.Z_GET_HU_INFOAsync(huParams);
+                        GetPackagings(huResponse.E_PK.ToArray());
 
                         if (Leather.Count == 0)
                         {
@@ -1581,6 +1574,38 @@ namespace MachineSerialPort
             set => SetProperty(ref _currentMsId, value);
         }
 
+        public ObservableCollection<ComboItem> Packagings { get; set; }
+        Dictionary<string, string> arrayPackaging = new Dictionary<string, string>();
+        private void GetPackagings(ZSTHU[] e_PK)
+        {
+            Packagings.Clear();
+            arrayPackaging.Clear();
+
+            var sortedPk = e_PK.OrderBy(item => item.MAKTX);
+
+            foreach (ZSTHU item in sortedPk)
+            {
+                if (item.MATNR != Packaging)
+                {
+                    Packagings.Add(new ComboItem { Value = item.MATNR, Text = $"{item.MAKTX}" });
+                }
+
+                arrayPackaging.Add(item.MATNR, item.MAKTX);
+            }
+
+            SelectedPackaging = Packagings[0];
+        }
+        private ComboItem? _selectedPackaging;
+        public ComboItem? SelectedPackaging
+        {
+            get => _selectedPackaging;
+            set
+            {
+                _selectedPackaging = value;
+                OnPropertyChanged(nameof(SelectedPackaging));
+            }
+        }
+
         private async void ResetCommandExecute()
         {
             var result = await ConfigHelper.ShowSmartDialog(
@@ -1601,6 +1626,8 @@ namespace MachineSerialPort
 
         public void ResetData()
         {
+            OrderQty = new OrderQuantity();
+
             Leather.Clear();
             PackingBatch.Clear();
             PackingLeather.Clear();
@@ -1632,6 +1659,7 @@ namespace MachineSerialPort
             StorageLocations.Clear();
             LeatherGrades.Clear();
             NGReasons.Clear();
+            Packagings.Clear();
 
             //_isStarted = true;
             IsStarted = false;
@@ -1868,6 +1896,7 @@ namespace MachineSerialPort
                 StoreLoc = SelectedStorageLocation?.Value ?? string.Empty,
                 Grade = SelectedGrade ?? string.Empty,
                 NgReason = SelectedNGReason?.Value ?? string.Empty,
+                Packaging = SelectedPackaging?.Value ?? string.Empty,
                 PackingSelected = IsPacking,
                 MeasureData = Leather.ToList(), // ToList() creates a thread-safe copy
                 TotalAreaSum = Leather.Sum(x => x.Area),
@@ -2126,6 +2155,74 @@ namespace MachineSerialPort
             //RefreshListStats();
         }
 
+        private async Task LoadRecoveryData(RecoverySession recovered)
+        {
+            OrderNo = recovered.OrderNo;
+
+            // Now we can safely await the SAP data
+            await GetOrderInfo();
+
+            // Restore the rest of the fields after SAP has populated the ComboBoxes
+            try
+            {
+                // This assumes MsDate is "yyyy-MM-dd" and MsTime is "HH:mm:ss"
+                startDateTime = DateTime.Parse($"{recovered.MsDate} {recovered.MsTime}");
+                _elapsedTime = recovered.ElapsedTime;
+            }
+            catch
+            {
+                // Fallback if recovery strings are empty or corrupted
+                startDateTime = DateTime.Now;
+                _elapsedTime = TimeSpan.Zero;
+            }
+
+            StartDate = startDateTime.ToString("yyyy-MM-dd");
+            StartTime = startDateTime.ToString("HH:mm:ss");
+            SelectedPersonnel = Personnels.FirstOrDefault(p => p.Value == recovered.PersonnelNo);
+            SelectedWageGroup = WageGroups.FirstOrDefault(p => p.Value == recovered.WageGroup);
+            SelectedParallelUnit = ParallelUnits.FirstOrDefault(p => p.Value == recovered.PUom);
+            SelectedStorageLocation = StorageLocations.FirstOrDefault(p => p.Value == recovered.StoreLoc);
+            SelectedGrade = recovered.Grade;
+            SelectedNGReason = NGReasons.FirstOrDefault(p => p.Value == recovered.NgReason);
+            SelectedPackaging = Packagings.FirstOrDefault(p => p.Value == recovered.Packaging);
+            IsPacking = recovered.PackingSelected;
+            CurrentMsId = recovered.MsId;
+            CurrentGroup = recovered.CurrentGroupNumber;
+
+            // Restore the Print list (md)
+            this.md.Clear();
+            if (recovered.MaterialDocRanges != null)
+            {
+                foreach (var range in recovered.MaterialDocRanges)
+                {
+                    this.md.Add(range);
+                }
+            }
+
+            Leather.Clear();
+            recovered.MeasureData.ForEach(x => Leather.Add(x));
+            SelectedLeather = Leather.LastOrDefault();
+            TotalArea = recovered.TotalAreaSum;
+            TxtTotalArea = TotalArea.ToString("#,##0.000");
+
+            if (IsPacking)
+            {
+                PackingLeather.Clear();
+                recovered.PackingData?.ForEach(x => PackingLeather.Add(x));
+                SelectedPackingLeather = PackingLeather.LastOrDefault();
+                PackingTotalArea = recovered.TotalPackingAreaSum;
+                TxtPackingTotalArea = PackingTotalArea.ToString("#,##0.000");
+
+                PackingBatch.Clear();
+                recovered.PackingBatchData?.ForEach(x => PackingBatch.Add(x));
+            }
+
+            IsStarted = true;
+            CurrentState = DeviceState.StartMeasuring;
+
+            UpdateTimerUI();
+        }
+
         private bool CheckEnableSave()
         {
             // If we have items and we are finished measuring
@@ -2336,12 +2433,14 @@ namespace MachineSerialPort
                     {
                         rtnRst.SetValue(true, "Success");
                         MatDocNo = response.E_DOC_NO;
+                        await RefreshOrderQty();
                     }
                 }
                 else
                 {
                     rtnRst.SetValue(true, "Success");
                     MatDocNo = response.E_DOC_NO;
+                    await RefreshOrderQty();
                 }
 
                 if (response.T_RT_BATCH != null && response.T_RT_BATCH.Length > 0)
@@ -2363,6 +2462,7 @@ namespace MachineSerialPort
                 {
                     rtnRst.SetValue(true, "Success");
                     MatDocNo = response.E_DOC_NO;
+                    await RefreshOrderQty();
                 }
             }
             catch (System.ServiceModel.FaultException faultEx)
@@ -2439,6 +2539,125 @@ namespace MachineSerialPort
             }
         }
 
+
+
+        private async Task RefreshOrderQty()
+        {
+            IsBusy = true;
+
+            try
+            {
+                // Define your SAP user credentials
+                var binding = new BasicHttpBinding(BasicHttpSecurityMode.TransportCredentialOnly);
+                binding.MaxReceivedMessageSize = 2147483647; // Set to 2GB (Max Int32)
+                binding.MaxBufferSize = 2147483647;
+
+                // Also update the ReaderQuotas if you have large strings or arrays
+                binding.ReaderQuotas.MaxStringContentLength = 2147483647;
+                binding.ReaderQuotas.MaxArrayLength = 2147483647;
+
+                binding.Security.Transport.ClientCredentialType = HttpClientCredentialType.Basic;
+                var endpoint = new EndpointAddress(arraySapEndpoint["z_check_measure_op"]);
+
+                // Set parameter
+                var pdoParams = new Z_CHECK_MEASURE_OPRequest
+                {
+                    I_PD_NO = OrderNo,
+                    T_EMP = new PA0001[] { },
+                    T_NGRS = new TBICCF[] { },
+                    T_PU = new T006A[] { },
+                    T_QAG = new TBICCF[] { },
+                    T_SL = new T001L[] { },
+                    T_WG = new T421T[] { }
+                };
+
+                var client = new Z_CHECK_MEASURE_OPClient(binding, endpoint);
+
+                // Set the SAP credentials
+                client.ClientCredentials.UserName.UserName = _dataService.SapUser;
+
+                if (sapPass != null)
+                {
+                    client.ClientCredentials.UserName.Password = sapPass;
+                }
+                else
+                {
+                    throw new System.NullReferenceException("Could not get RFC password");
+                }
+
+                // Call the web service method
+                var response = await client.Z_CHECK_MEASURE_OPAsync(pdoParams);
+                // Process the result
+                if (response.E_OD_INFO.GMEIN == "0")
+                {
+                    throw new Exception($"Order No. {OrderNo} not found");
+                }
+                else
+                {
+                    Oi = response.E_OD_INFO;
+
+                    OrderQty.Total = Oi.GAMNG;
+                    OrderQty.Delivered = Oi.ISM04;
+                    OrderQty.Remaining = Oi.ISM05;
+                }
+            }
+            catch (System.ServiceModel.FaultException faultEx)
+            {
+                if (faultEx.Message == "ORDER_NOT_FOUND")
+                {
+                    ErrMsg = "Order Not Found";
+                }
+                else if (faultEx.Message == "OPERATION_NOT_FOUND")
+                {
+                    ErrMsg = "Operation Not Found";
+                }
+                else if (faultEx.Message == "ONE_OP")
+                {
+                    ErrMsg = "Order Has One Operation Only";
+                }
+                else if (faultEx.Message == "LAST_OP_NOT_MEA")
+                {
+                    ErrMsg = "Last Operation Not Measure";
+                }
+                else if (faultEx.Message == "LAST_OP_STAT_CHECK")
+                {
+                    ErrMsg = "Check Last Operation Order Status";
+                }
+                else if (faultEx.Message == "PREV_OP_NOT_CF")
+                {
+                    ErrMsg = "Previous Operation Not Confirm";
+                }
+                else
+                {
+                    ErrMsg = faultEx.Message;
+                }
+
+                await ConfigHelper.ShowSmartDialog(
+                    "InfoTemplate",
+                    ErrMsg,
+                    PackIconKind.WarningCircle,
+                    Brushes.DarkOrange
+                );
+
+                ResetData();
+            }
+            catch (Exception ex)
+            {
+                await ConfigHelper.ShowSmartDialog(
+                    "InfoTemplate",
+                    ex.Message,
+                    PackIconKind.WarningCircle,
+                    Brushes.DarkOrange
+                );
+
+                ResetData();
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
         private async Task SaveLocalDataAsync(string sapMatDoc)
         {
             DateTime endDateTime = DateTime.Parse($"{EndDate} {EndTime}");
@@ -2452,6 +2671,7 @@ namespace MachineSerialPort
                 StoreLoc = SelectedStorageLocation?.Value ?? string.Empty,
                 Grade = SelectedGrade ?? string.Empty,
                 NgReason = SelectedNGReason?.Value ?? string.Empty,
+                Packaging = SelectedPackaging?.Value ?? string.Empty,
                 StartDate = startDateTime.Date,
                 StartTime = startDateTime.TimeOfDay,
                 EndDate = endDateTime.Date,
@@ -2528,6 +2748,7 @@ namespace MachineSerialPort
                     StoreLoc = SelectedStorageLocation?.Value ?? string.Empty,
                     Grade = SelectedGrade ?? string.Empty,
                     NgReason = SelectedNGReason?.Value ?? string.Empty,
+                    Packaging = SelectedPackaging?.Value ?? string.Empty,
                     MeasureData = Leather.ToList(),
                     PackingData = PackingLeather.ToList(),
                     LastUpdated = DateTime.Now
