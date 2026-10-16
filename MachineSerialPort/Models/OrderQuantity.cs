@@ -1,20 +1,58 @@
-﻿using MachineSerialPort.Databases.Tables;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace MachineSerialPort.Models
 {
-    public class OrderQuantity
+    public class OrderQuantity : INotifyPropertyChanged
     {
-        [Column(TypeName = "decimal(18, 3)")]
-        public decimal Total { get; set; }
-        [Column(TypeName = "decimal(18, 3)")]
-        public decimal Delivered { get; set; }
-        [Column(TypeName = "decimal(18, 3)")]
-        public decimal Remaining { get; set; }
+        private decimal _total;
+        private decimal _delivered;
+        private decimal _remaining;
+
+        public decimal Total
+        {
+            get => _total;
+            set
+            {
+                if (_total != value)
+                {
+                    _total = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public decimal Delivered
+        {
+            get => _delivered;
+            set
+            {
+                if (_delivered != value)
+                {
+                    _delivered = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public decimal Remaining
+        {
+            get => _remaining;
+            set
+            {
+                if (_remaining != value)
+                {
+                    _remaining = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
     }
 }

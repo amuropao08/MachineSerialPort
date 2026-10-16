@@ -316,11 +316,11 @@
 
                 <TextBox Grid.Column="2" IsReadOnly="True" Text="{Binding OrderQty.Total, StringFormat=N3}" />
 
-                <TextBlock Grid.Column="4" HorizontalAlignment="Left" Text="Delivered" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="4" HorizontalAlignment="Left" Text="/  Delivered" VerticalAlignment="Center" />
 
                 <TextBox Grid.Column="6" IsReadOnly="True" Text="{Binding OrderQty.Delivered, StringFormat=N3}" />
 
-                <TextBlock Grid.Column="8" HorizontalAlignment="Left" Text="Remaining" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="8" HorizontalAlignment="Left" Text="/  Remaining" VerticalAlignment="Center" />
 
                 <TextBox Grid.Column="10" IsReadOnly="True" Text="{Binding OrderQty.Remaining, StringFormat=N3}" />
             </Grid>

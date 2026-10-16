@@ -5,6 +5,7 @@ using MachineSerialPort.Databases.Tables;
 using MachineSerialPort.Helpers;
 using MachineSerialPort.Models;
 using MachineSerialPort.PDF;
+using MachineSerialPort.Services;
 using MaterialDesignThemes.Wpf;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -477,6 +478,7 @@ namespace MachineSerialPort
         public ICommand PrintA4Command { get; }
         public ICommand PrintA5Command { get; private set; }
         public ICommand PrintPackingCommand { get; private set; }
+        public ICommand PrintQRCommand { get; private set; }
         public ICommand RefreshPortsCommand { get; }
         public ICommand ReprintA4Command { get; }
         public ICommand ReprintA5Command { get; }
@@ -553,7 +555,6 @@ namespace MachineSerialPort
 
             IsPacking = ConfigHelper.GetValue<bool>("AppSettings:PackingEnable", false);
             ShowTestSendDataButton = ConfigHelper.GetValue<bool>("AppSettings:ShowTestSendDataButton", false);
-            OrderQty = new OrderQuantity();
 
             //Leather          = new ObservableCollection<LeatherArea>();
             LeatherGrades    = new ObservableCollection<string>();
@@ -586,6 +587,7 @@ namespace MachineSerialPort
             PrintA4Command          = new RelayCommand(PrintA4Form, CheckEnablePrintA4);
             PrintA5Command          = new RelayCommand(PrintA5Form, CheckEnablePrintA5);
             PrintPackingCommand     = new RelayCommand(PrintPackingForm, CheckEnablePrintPacking);
+            PrintQRCommand          = new RelayCommand(PrintQRForm, CheckEnablePrintA4);
             ReprintA4Command        = new RelayCommand(PrintA4Form, CheckEnableReprint);
             ReprintA5Command        = new RelayCommand(PrintA5Form, CheckEnableReprint);
             SaveCommand             = new RelayCommand(SaveData, CheckEnableSave);
@@ -1626,8 +1628,6 @@ namespace MachineSerialPort
 
         public void ResetData()
         {
-            OrderQty = new OrderQuantity();
-
             Leather.Clear();
             PackingBatch.Clear();
             PackingLeather.Clear();
@@ -1638,6 +1638,10 @@ namespace MachineSerialPort
             Unit = string.Empty;
             MatDesc = string.Empty;
             ColorArticle = string.Empty;
+
+            OrderQty.Total = 0;
+            OrderQty.Delivered = 0;
+            OrderQty.Remaining = 0;
 
             if (_dataService != null)
             {
@@ -3486,6 +3490,31 @@ namespace MachineSerialPort
             PdfFileUtility.ShowDocument(filename);
 
             //_isPackingPrinted = true;
+        }
+
+        private async Task PrintQRForm()
+        {
+            try
+            {
+                // Replace with your SATO printer's IP address
+                string printerIp = "192.168.1.200";
+
+                var printerService = new SatoPrinterService(printerIp, 9100);
+
+                // Sample data for testing
+                string sampleQrData = "IHL-SAMPLE-12345";
+                string sampleHeader = "TEST LABEL";
+
+                await printerService.PrintSampleQrAsync(sampleQrData, sampleHeader);
+
+                MessageBox.Show("QR Code sent to SATO Printer successfully!", "Print Success",
+                                MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to send data to SATO Printer:\n{ex.Message}", "Print Error",
+                                MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void RefreshListStats()
